@@ -1,0 +1,8 @@
+node_modules/
+server/.env
+server/data/*.json
+!server/data/seed.json
+.pio/
+.vscode/.wokwi-cache/
+*.log
+.DS_Store

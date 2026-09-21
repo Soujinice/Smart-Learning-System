@@ -1,0 +1,98 @@
+{
+  "users": [
+    { "username": "admin", "password": "admin123", "role": "admin", "name": "Engr. Corazon Villaruel", "title": "Building Administrator" },
+    { "username": "faculty", "password": "faculty123", "role": "faculty", "name": "Engr. Ramon Reyes", "title": "Faculty - CpE Department" },
+    { "username": "registrar", "password": "registrar123", "role": "registrar", "name": "Ms. Andrea Mercado", "title": "University Registrar Staff" },
+    { "username": "security", "password": "security123", "role": "security", "name": "Mr. Bienvenido Cruz", "title": "Security Officer" },
+    { "username": "maintenance", "password": "maintenance123", "role": "maintenance", "name": "Mr. Danilo Ocampo", "title": "Maintenance Staff" }
+  ],
+
+  "rfid_registry": [
+    { "uid": "04A3C1B2", "name": "Juan Miguel Dela Cruz", "role": "student", "room": "SF-03", "section": "BSCPE 3A" },
+    { "uid": "04B7E2F1", "name": "Prof. Ramon Reyes", "role": "faculty", "room": "SF-03", "section": "" },
+    { "uid": "04C9D4A0", "name": "Maria Clara Santos", "role": "student", "room": "SF-05", "section": "BSIT 2B" },
+    { "uid": "04D1E8F3", "name": "Angelo Bautista", "role": "student", "room": "SF-03", "section": "BSCPE 3A" },
+    { "uid": "04E2A9C7", "name": "Prof. Liza Manalo", "role": "faculty", "room": "SF-05", "section": "" },
+    { "uid": "04F3B0D5", "name": "Kristine Joy Ramos", "role": "student", "room": "SF-04", "section": "BSCPE 2A" },
+    { "uid": "0501C2E6", "name": "Mark Anthony Villanueva", "role": "student", "room": "SF-06", "section": "BSIT 3A" },
+    { "uid": "0512D3F8", "name": "Prof. Eduardo Lim", "role": "faculty", "room": "SF-07", "section": "" },
+    { "uid": "0523E4A1", "name": "Jasmine Rose Torres", "role": "student", "room": "SF-08", "section": "BSCPE 1A" },
+    { "uid": "0534F5B2", "name": "Paolo Gutierrez", "role": "student", "room": "SF-03", "section": "BSCPE 3A" },
+    { "uid": "0545A6C3", "name": "Engr. Corazon Villaruel", "role": "admin", "room": "GF-02", "section": "" },
+    { "uid": "0556B7D4", "name": "Ms. Andrea Mercado", "role": "registrar", "room": "GF-02", "section": "" }
+  ],
+
+  "schedule": [
+    { "id": "SCH-01", "room": "SF-03", "start": 450, "end": 540, "subject": "CPE 301 - Embedded Systems", "section": "BSCPE 3A", "faculty": "Engr. Ramon Reyes" },
+    { "id": "SCH-02", "room": "SF-03", "start": 555, "end": 645, "subject": "CPE 412 - Intelligent Buildings", "section": "BSCPE 4A", "faculty": "Engr. Ramon Reyes" },
+    { "id": "SCH-03", "room": "SF-03", "start": 780, "end": 870, "subject": "IT 205 - Networking 1", "section": "BSIT 2B", "faculty": "Prof. Liza Manalo" },
+    { "id": "SCH-04", "room": "SF-04", "start": 480, "end": 570, "subject": "CPE 210 - Logic Circuits", "section": "BSCPE 2A", "faculty": "Prof. Liza Manalo" },
+    { "id": "SCH-05", "room": "SF-05", "start": 510, "end": 600, "subject": "IT 301 - Systems Integration", "section": "BSIT 3A", "faculty": "Prof. Eduardo Lim" },
+    { "id": "SCH-06", "room": "SF-06", "start": 600, "end": 690, "subject": "CS 220 - Data Structures", "section": "BSCS 2A", "faculty": "Prof. Eduardo Lim" },
+    { "id": "SCH-07", "room": "SF-07", "start": 660, "end": 750, "subject": "CPE 495 - Seminars and Fieldtrips", "section": "BSCPE 4B", "faculty": "Engr. Ramon Reyes" },
+    { "id": "SCH-08", "room": "SF-08", "start": 540, "end": 630, "subject": "SCI 101 - Applied Physics", "section": "BSCPE 1A", "faculty": "Prof. Liza Manalo" }
+  ],
+
+  "rooms": [
+    { "id": "GF-01", "name": "Main Lobby", "floor": 1, "model_w": 5, "model_h": 6, "model_area": 30, "actual_area": 480, "devices": ["Digital Information Display", "CCTV", "Waste Bin Sensor (live)"], "has_hardware": true },
+    { "id": "GF-02", "name": "Reception / Administration", "floor": 1, "model_w": 4, "model_h": 7, "model_area": 28, "actual_area": 448, "devices": ["Wi-Fi AP", "CCTV"], "has_hardware": false },
+    { "id": "GF-03", "name": "Principal / Director's Office", "floor": 1, "model_w": 5, "model_h": 5, "model_area": 25, "actual_area": 400, "devices": ["Wi-Fi AP"], "has_hardware": false },
+    { "id": "GF-04", "name": "Admin Office", "floor": 1, "model_w": 4, "model_h": 5, "model_area": 20, "actual_area": 320, "devices": ["Wi-Fi AP"], "has_hardware": false },
+    { "id": "GF-05", "name": "Library / Learning Resource Center", "floor": 1, "model_w": 7, "model_h": 9, "model_area": 63, "actual_area": 1008, "devices": ["Wi-Fi AP", "CCTV", "Environmental Sensor"], "has_hardware": false },
+    { "id": "GF-06", "name": "Cafeteria", "floor": 1, "model_w": 4.5, "model_h": 9, "model_area": 40.5, "actual_area": 648, "devices": ["MQ-2 Smoke Sensor (live)", "Flame Sensor (live, fallback switch)", "CCTV"], "has_hardware": true },
+    { "id": "GF-07", "name": "Server / Network Room", "floor": 1, "model_w": 3, "model_h": 5, "model_area": 15, "actual_area": 240, "devices": ["Core Switch", "Router", "Firewall", "LMS Server"], "has_hardware": false },
+    { "id": "GF-08", "name": "Female Restroom", "floor": 1, "model_w": 3.5, "model_h": 3, "model_area": 10.5, "actual_area": 168, "devices": [], "has_hardware": false },
+    { "id": "GF-09", "name": "Male Restroom", "floor": 1, "model_w": 3.5, "model_h": 3, "model_area": 10.5, "actual_area": 168, "devices": [], "has_hardware": false },
+    { "id": "GF-10", "name": "Accessible / PWD Restroom", "floor": 1, "model_w": 3.5, "model_h": 3, "model_area": 10.5, "actual_area": 168, "devices": [], "has_hardware": false },
+    { "id": "GF-ENTRANCE", "name": "Main Entrance", "floor": 1, "model_w": 3, "model_h": 2, "model_area": 6, "actual_area": 96, "devices": ["RFID Access Control (live, button-simulated)", "Metal Detector (live)", "Smart Door Lock (live)", "Fire Alarm Control Panel"], "has_hardware": true },
+
+    { "id": "SF-01", "name": "Second Floor Restrooms", "floor": 2, "model_w": 3, "model_h": 3.5, "model_area": 10.5, "actual_area": 168, "devices": [], "has_hardware": false },
+    { "id": "SF-02", "name": "Faculty / Office", "floor": 2, "model_w": 3, "model_h": 2, "model_area": 6, "actual_area": 96, "devices": ["Wi-Fi AP"], "has_hardware": false },
+    { "id": "SF-03", "name": "Smart Classroom 1", "floor": 2, "model_w": 5, "model_h": 6, "model_area": 30, "actual_area": 480, "devices": ["DHT22 (live)", "PIR Motion Sensor (live)", "Relay - Smart Board/Projector (live)", "Interactive Smart Board", "Smart Projector"], "has_hardware": true },
+    { "id": "SF-04", "name": "Smart Classroom 2", "floor": 2, "model_w": 5, "model_h": 5, "model_area": 25, "actual_area": 400, "devices": ["Interactive Smart Board", "CCTV"], "has_hardware": false },
+    { "id": "SF-05", "name": "Computer Lab 1", "floor": 2, "model_w": 5, "model_h": 6, "model_area": 30, "actual_area": 480, "devices": ["Wi-Fi AP", "CCTV"], "has_hardware": false },
+    { "id": "SF-06", "name": "Computer Lab 2", "floor": 2, "model_w": 8, "model_h": 6, "model_area": 48, "actual_area": 768, "devices": ["Wi-Fi AP", "CCTV"], "has_hardware": false },
+    { "id": "SF-07", "name": "Seminar / Smart Room", "floor": 2, "model_w": 5, "model_h": 4, "model_area": 20, "actual_area": 320, "devices": ["Smart Projector", "Digital Display"], "has_hardware": false },
+    { "id": "SF-08", "name": "Science / Smart Lab", "floor": 2, "model_w": 4, "model_h": 4, "model_area": 16, "actual_area": 256, "devices": ["Environmental Sensor", "CCTV"], "has_hardware": false },
+    { "id": "SF-09", "name": "Main Staircase (2F)", "floor": 2, "model_w": 3, "model_h": 3, "model_area": 9, "actual_area": 144, "devices": ["Digital Information Display"], "has_hardware": false },
+    { "id": "SF-10", "name": "Open to Below", "floor": 2, "model_w": 6, "model_h": 6, "model_area": 36, "actual_area": 576, "devices": [], "has_hardware": false }
+  ],
+
+  "thresholds": {
+    "room_temp_min": 20, "room_temp_max": 28,
+    "room_hum_min": 40, "room_hum_max": 70,
+    "env_temp_min": 20, "env_temp_max": 28,
+    "env_hum_min": 40, "env_hum_max": 70,
+    "smoke_l1": 20, "smoke_l2": 40, "smoke_l3": 60, "smoke_l4": 80,
+    "metal_threshold_pct": 55,
+    "bin_depth_cm": 40, "waste_filling_pct": 60, "waste_full_pct": 80
+  },
+
+  "announcements": [
+    { "id": "ANN-01", "text": "Welcome to the Smart Learning Center, Technological University of the Philippines.", "ts": "07:00", "author": "admin" }
+  ],
+
+  "doors": [
+    { "id": "main_entrance", "name": "Main Entrance", "room": "GF-ENTRANCE", "live": true, "locked": true },
+    { "id": "gf05_library", "name": "Library Entrance", "room": "GF-05", "live": false, "locked": true },
+    { "id": "gf07_server", "name": "Server Room Door", "room": "GF-07", "live": false, "locked": true },
+    { "id": "gf06_cafeteria", "name": "Cafeteria Entrance", "room": "GF-06", "live": false, "locked": true },
+    { "id": "sf03_smart1", "name": "Smart Classroom 1", "room": "SF-03", "live": false, "locked": true },
+    { "id": "sf05_complab1", "name": "Computer Lab 1", "room": "SF-05", "live": false, "locked": true },
+    { "id": "sf06_complab2", "name": "Computer Lab 2", "room": "SF-06", "live": false, "locked": true },
+    { "id": "sf07_seminar", "name": "Seminar Room", "room": "SF-07", "live": false, "locked": true }
+  ],
+
+  "bins": [
+    { "id": "lobby-main", "name": "Main Lobby Bin", "room": "GF-01", "live": true, "fill_pct": 15 },
+    { "id": "cafeteria-1", "name": "Cafeteria Bin 1", "room": "GF-06", "live": false, "fill_pct": 22 },
+    { "id": "library-1", "name": "Library Bin", "room": "GF-05", "live": false, "fill_pct": 8 },
+    { "id": "corridor-gf", "name": "Ground Floor Corridor Bin", "room": "GF-01", "live": false, "fill_pct": 34 },
+    { "id": "corridor-sf", "name": "Second Floor Corridor Bin", "room": "SF-09", "live": false, "fill_pct": 41 }
+  ],
+
+  "attendance": [],
+  "events": [],
+  "false_alarms": [],
+  "screenings": []
+}
