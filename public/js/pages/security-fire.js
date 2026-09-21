@@ -7,7 +7,7 @@ let unsub = null;
 let thresholds = null;
 let user = null;
 
-const LEVEL_LABELS = ['L0 Normal', 'L1 Watch', 'L2 Warning', 'L3 Danger', 'L4 CONFIRMED EMERGENCY'];
+const LEVEL_LABELS = ['Normal', 'Watch', 'Warning', 'Danger', 'CONFIRMED EMERGENCY'];
 const LEVEL_COLORS = ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--amber)', 'var(--red-primary)'];
 
 function render() {
@@ -16,53 +16,44 @@ function render() {
   const t = state.telemetry;
   const level = t?.security?.smoke_level ?? 0;
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Security & Fire (Module D) and Metal Detector (Module F)'),
-      el('p', {}, 'MQ-2 + flame fallback switch (Cafeteria, GF-06), PIR (SF-03), and the Main Entrance walk-through screening.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Security & Fire')]));
 
   const grid2 = el('div', { class: 'grid grid-2' });
-  grid2.appendChild(card('Smoke / Fire Level - Cafeteria (GF-06)', [
+  grid2.appendChild(card('Smoke / Fire - GF-06', [
     gauge(t?.security?.smoke_pct ?? 0, LEVEL_LABELS[level], () => LEVEL_COLORS[level]),
-    row('Level', LEVEL_LABELS[level]),
-    row('Flame sensor (fallback switch)', t?.security?.flame ? 'DETECTED' : 'Clear'),
-    row('Building-hours intrusion check', t?.security?.intrusion ? 'INTRUSION SUSPECTED' : 'Normal'),
-    row('False alarms logged', t?.security?.false_alarms ?? 0),
+    row('Flame', t?.security?.flame ? 'DETECTED' : 'Clear'),
+    row('Intrusion check', t?.security?.intrusion ? 'SUSPECTED' : 'Normal'),
+    row('False alarms', t?.security?.false_alarms ?? 0),
   ], { titleRight: liveBadge(true) }));
 
-  grid2.appendChild(card('CCTV Status Tile (PIR-driven, SF-03)', [
-    row('Camera ID', 'CAM-SF03-01'),
-    row('REC', 'ACTIVE'),
+  grid2.appendChild(card('CCTV - SF-03', [
+    row('Camera', 'CAM-SF03-01'),
     row('Motion', t?.environment?.motion ? 'PRESENT' : 'none'),
-    row('Last motion timestamp', t?.sim_time || '-'),
-    el('p', { class: 'sub' }, 'This is a status tile, not a video feed - no fake video is shown.'),
+    row('Last motion', t?.sim_time || '-'),
   ]));
   container.appendChild(grid2);
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Metal Detector - Main Entrance'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Metal Detector'));
   const metalGrid = el('div', { class: 'grid grid-2' });
-  metalGrid.appendChild(card('Live Status', [
+  metalGrid.appendChild(card('Status', [
     gauge(state.screenings[0]?.signal_pct ?? 0, `Threshold ${t?.metal_detector?.threshold_pct ?? 55}%`),
-    row('Screening hold', t?.metal_detector?.hold_active ? 'ACTIVE - entry held for security decision' : 'Idle'),
+    row('Hold', t?.metal_detector?.hold_active ? 'ACTIVE' : 'Idle'),
     row('Total scans', state.screenings.length),
   ], { titleRight: liveBadge(true) }));
 
-  metalGrid.appendChild(card('Screening Queue', t?.metal_detector?.hold_active ? [
-    el('p', {}, 'A screening is on hold. RFID access is bypassed until a decision is made or the hold times out.'),
+  metalGrid.appendChild(card('Screening Decision', t?.metal_detector?.hold_active ? [
     el('div', { class: 'form-inline' }, [
       el('button', { class: 'pill-btn primary', onclick: () => decide(true) }, 'Allow Entry'),
       el('button', { class: 'pill-btn danger', onclick: () => decide(false) }, 'Deny Entry'),
     ]),
-  ] : [el('div', { class: 'empty-state' }, 'No screening currently on hold.')]));
+  ] : [el('div', { class: 'empty-state' }, 'No hold active.')]));
   container.appendChild(metalGrid);
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Threshold Settings'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Thresholds'));
   container.appendChild(card(null, [buildThresholdForm()]));
 
   const grid3 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
-  grid3.appendChild(card('False-Alarm Log', state.falseAlarms.length ? [table(
+  grid3.appendChild(card('False Alarms', state.falseAlarms.length ? [table(
     [
       { key: 'ts', label: 'Time', render: (r) => fmtTime(r.ts) },
       { key: 'smoke_pct', label: 'Smoke %', render: (r) => `${(r.smoke_pct ?? 0).toFixed(0)}%` },
@@ -70,18 +61,18 @@ function render() {
       { key: 'reason', label: 'Reason' },
     ],
     state.falseAlarms.slice(0, 15),
-  )] : [el('div', { class: 'empty-state' }, 'No false alarms logged yet.')]));
+  )] : [el('div', { class: 'empty-state' }, 'None logged.')]));
 
   const screeningStats = state.screenings.length ? {
     scans: state.screenings[0]?.scans ?? state.screenings.length,
     allowed: state.screenings[0]?.allowed ?? 0,
     denied: state.screenings[0]?.denied ?? 0,
   } : { scans: 0, allowed: 0, denied: 0 };
-  grid3.appendChild(card('Screening History & Stats', [
+  grid3.appendChild(card('Screening Stats', [
     row('Scans', screeningStats.scans),
     row('Allowed', screeningStats.allowed),
     row('Denied', screeningStats.denied),
-    el('div', { class: 'section-title', style: 'margin-top:12px;' }, 'Recent Screenings'),
+    el('div', { class: 'section-title', style: 'margin-top:12px;' }, 'Recent'),
     table(
       [
         { key: 'ts', label: 'Time', render: (r) => fmtTime(r.ts) },
@@ -102,16 +93,15 @@ function buildThresholdForm() {
   if (!thresholds) return el('div', { class: 'empty-state' }, 'Loading thresholds...');
   if (user?.role !== 'admin') {
     return el('div', {}, [
-      row('Smoke L1/L2/L3/L4', `${thresholds.smoke_l1} / ${thresholds.smoke_l2} / ${thresholds.smoke_l3} / ${thresholds.smoke_l4} %`),
-      row('Metal detector threshold', `${thresholds.metal_threshold_pct}%`),
-      el('div', { class: 'sub', style: 'margin-top:8px;' }, 'Sign in as admin to edit thresholds.'),
+      row('Smoke L1-L4', `${thresholds.smoke_l1} / ${thresholds.smoke_l2} / ${thresholds.smoke_l3} / ${thresholds.smoke_l4} %`),
+      row('Metal detector', `${thresholds.metal_threshold_pct}%`),
     ]);
   }
   const l1 = numInput(thresholds.smoke_l1), l2 = numInput(thresholds.smoke_l2), l3 = numInput(thresholds.smoke_l3), l4 = numInput(thresholds.smoke_l4);
   const metal = numInput(thresholds.metal_threshold_pct);
   return el('div', { class: 'form-inline' }, [
-    labeled('Smoke L1 (%)', l1), labeled('Smoke L2 (%)', l2), labeled('Smoke L3 (%)', l3), labeled('Smoke L4 (%)', l4),
-    labeled('Metal detector (%)', metal),
+    labeled('Smoke L1', l1), labeled('L2', l2), labeled('L3', l3), labeled('L4', l4),
+    labeled('Metal detector', metal),
     el('button', {
       class: 'pill-btn primary', onclick: async () => {
         const r = await api.saveThresholds({
@@ -119,10 +109,10 @@ function buildThresholdForm() {
           metal_threshold_pct: Number(metal.value),
         });
         thresholds = r.thresholds;
-        toast('Thresholds synced to ESP32', 'success');
+        toast('Saved', 'success');
         render();
       },
-    }, 'Save & Sync to ESP32'),
+    }, 'Save'),
   ]);
 }
 

@@ -12,12 +12,7 @@ function render() {
   if (!container) return;
   clearNode(container);
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Admin / Faculty Portal (Module I)'),
-      el('p', {}, `Signed in as ${user.name} - role: ${user.role}.`),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Admin / Faculty')]));
 
   if (user.role === 'admin') renderAdmin();
   else if (user.role === 'faculty') renderFaculty();
@@ -26,66 +21,57 @@ function render() {
 }
 
 function renderAdmin() {
-  container.appendChild(el('div', { class: 'section-title' }, 'Admin Dashboard'));
-
-  container.appendChild(card('Announcements (Digital Information Display)', [
+  container.appendChild(card('Digital Display Announcement', [
     announceForm(),
     el('div', { class: 'section-title' }, 'Recent'),
     table([{ key: 'ts', label: 'Time' }, { key: 'text', label: 'Text' }, { key: 'author', label: 'By' }], announcements.slice(-10).reverse()),
   ]));
 
-  container.appendChild(el('div', { class: 'section-title' }, 'User Information (RFID Registry)'));
+  container.appendChild(el('div', { class: 'section-title' }, 'RFID Registry'));
   container.appendChild(card(null, [userEditor()]));
 
   container.appendChild(el('div', { class: 'section-title' }, 'Schedule'));
   container.appendChild(card(null, [scheduleTable(true)]));
-
-  container.appendChild(el('div', { class: 'section-title' }, 'System Settings'));
-  container.appendChild(card(null, [
-    el('p', {}, ['Thresholds and device configuration are edited on their own pages (', el('a', { href: '#/environment' }, 'Environment'), ', ', el('a', { href: '#/security-fire' }, 'Security & Fire'), ') so changes are made where their live readings are visible.']),
-  ]));
 }
 
 function renderFaculty() {
-  container.appendChild(el('div', { class: 'section-title' }, 'Faculty Dashboard'));
-  container.appendChild(card('Faculty Inputs Class Information', [scheduleForm()]));
+  container.appendChild(card('Add Class', [scheduleForm()]));
   container.appendChild(el('div', { class: 'section-title' }, 'My Schedule'));
   container.appendChild(card(null, [scheduleTable(false, user.name)]));
-  container.appendChild(el('div', { class: 'section-title' }, 'View Attendance / Classroom Data'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Attendance'));
   container.appendChild(card(null, [table(
     [{ key: 'ts', label: 'Time' }, { key: 'name', label: 'Name' }, { key: 'role', label: 'Role' }, { key: 'room', label: 'Room' }],
     attendanceRows.slice(0, 30),
-    { emptyText: 'No attendance recorded yet.' },
+    { emptyText: 'None yet.' },
   )]));
 }
 
 function renderRegistrar() {
-  container.appendChild(el('div', { class: 'section-title' }, 'Registrar - Attendance Records'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Attendance Records'));
   container.appendChild(card(null, [table(
     [{ key: 'ts', label: 'Time' }, { key: 'name', label: 'Name' }, { key: 'role', label: 'Role' }, { key: 'room', label: 'Room' }, { key: 'source', label: 'Source' }],
     attendanceRows,
-    { emptyText: 'No attendance recorded yet.' },
+    { emptyText: 'None yet.' },
   )]));
 }
 
 function renderOther() {
   const dest = user.role === 'security' ? '#/security-fire' : user.role === 'maintenance' ? '#/waste' : '#/command-center';
-  const label = user.role === 'security' ? 'Security & Fire (screening decisions)' : user.role === 'maintenance' ? 'Waste (mark bins collected)' : 'Command Center';
+  const label = user.role === 'security' ? 'Security & Fire' : user.role === 'maintenance' ? 'Waste' : 'Command Center';
   container.appendChild(card(null, [
-    el('p', {}, `Your role (${user.role}) works from its own operational page rather than this portal.`),
     el('a', { href: dest, class: 'pill-btn primary' }, `Go to ${label}`),
   ]));
 }
 
 function announceForm() {
-  const input = el('input', { type: 'text', placeholder: 'Announcement text for the digital display...', style: 'width:100%;' });
+  const input = el('input', { type: 'text', placeholder: 'Announcement text...', style: 'width:100%;' });
   const btn = el('button', {
     class: 'pill-btn primary', onclick: async () => {
       if (!input.value.trim()) return;
       const r = await api.postAnnouncement(input.value.trim());
       announcements.push(r.announcement);
       input.value = '';
-      toast('Announcement sent to ESP32 display', 'success');
+      toast('Sent', 'success');
       render();
     },
   }, 'Publish');
@@ -103,9 +89,9 @@ function userEditor() {
   const saveBtn = el('button', {
     class: 'pill-btn primary', onclick: async () => {
       await api.saveRfid(registry.filter((u) => u.uid));
-      toast('Registry synced to ESP32', 'success');
+      toast('Saved', 'success');
     },
-  }, 'Save & Sync to ESP32');
+  }, 'Save');
 
   return el('div', {}, [
     el('table', { class: 'data-table' }, [
@@ -138,10 +124,10 @@ function scheduleForm() {
       const entry = { id: `SCH-${Date.now()}`, room: room.value, start: sh * 60 + sm, end: eh * 60 + em, subject: subject.value, section: section.value, faculty: user.name };
       schedule.push(entry);
       await api.saveSchedule(schedule);
-      toast('Schedule updated and synced to ESP32', 'success');
+      toast('Added', 'success');
       render();
     },
-  }, 'Add to Schedule');
+  }, 'Add');
   return el('div', { class: 'form-inline' }, [
     el('div', { class: 'form-row' }, [el('label', {}, 'Room'), room]),
     el('div', { class: 'form-row' }, [el('label', {}, 'Start'), start]),

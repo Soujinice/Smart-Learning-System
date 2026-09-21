@@ -5,16 +5,13 @@ import { icon } from './icons.js';
 
 const PAGES = [
   { id: 'command-center', label: 'Command Center', icon: 'dashboard', path: './pages/command-center.js' },
-  { id: 'floor-plans', label: 'Floor Plans', icon: 'floorplan', path: './pages/floor-plans.js' },
   { id: 'attendance', label: 'Attendance & RFID', icon: 'rfid', path: './pages/attendance.js' },
   { id: 'smart-room', label: 'Smart Room', icon: 'room', path: './pages/smart-room.js' },
   { id: 'environment', label: 'Environment', icon: 'leaf', path: './pages/environment.js' },
   { id: 'security-fire', label: 'Security & Fire', icon: 'flame', path: './pages/security-fire.js' },
-  { id: 'emergency', label: 'Emergency', icon: 'emergency', path: './pages/emergency.js' },
   { id: 'network', label: 'Network', icon: 'network', path: './pages/network.js' },
   { id: 'waste', label: 'Waste', icon: 'waste', path: './pages/waste.js' },
-  { id: 'admin-portal', label: 'Admin/Faculty Portal', icon: 'admin', path: './pages/admin-portal.js' },
-  { id: 'flow-tracker', label: 'Flow Tracker', icon: 'flow', path: './pages/flow-tracker.js' },
+  { id: 'admin-portal', label: 'Admin / Faculty', icon: 'admin', path: './pages/admin-portal.js' },
   { id: 'diagnostics', label: 'Diagnostics', icon: 'settings', path: './pages/diagnostics.js' },
 ];
 
@@ -60,15 +57,14 @@ function renderLogin(errorMsg) {
   root.appendChild(el('div', { class: 'login-screen' }, [
     el('div', { class: 'login-card' }, [
       el('h1', {}, 'Smart Learning Center'),
-      el('p', {}, 'Technological University of the Philippines - Admin/Faculty Portal (simulation)'),
+      el('p', {}, 'TUP - Group 3'),
       form,
       el('div', { class: 'demo-accounts' }, [
-        el('div', {}, ['Demo accounts (for this simulation only):']),
-        el('div', {}, [el('code', {}, 'admin'), ' / ', el('code', {}, 'admin123'), ' - Administrator']),
-        el('div', {}, [el('code', {}, 'faculty'), ' / ', el('code', {}, 'faculty123'), ' - Faculty']),
-        el('div', {}, [el('code', {}, 'registrar'), ' / ', el('code', {}, 'registrar123'), ' - Registrar']),
-        el('div', {}, [el('code', {}, 'security'), ' / ', el('code', {}, 'security123'), ' - Security Officer']),
-        el('div', {}, [el('code', {}, 'maintenance'), ' / ', el('code', {}, 'maintenance123'), ' - Maintenance']),
+        el('div', {}, [el('code', {}, 'admin'), ' / ', el('code', {}, 'admin123')]),
+        el('div', {}, [el('code', {}, 'faculty'), ' / ', el('code', {}, 'faculty123')]),
+        el('div', {}, [el('code', {}, 'registrar'), ' / ', el('code', {}, 'registrar123')]),
+        el('div', {}, [el('code', {}, 'security'), ' / ', el('code', {}, 'security123')]),
+        el('div', {}, [el('code', {}, 'maintenance'), ' / ', el('code', {}, 'maintenance123')]),
       ]),
     ]),
   ]));
@@ -81,7 +77,7 @@ function renderShell() {
     el('div', { class: 'sidebar-brand' }, [
       el('div', { class: 'brand-text' }, [
         'Smart Learning Center',
-        el('small', {}, 'TUP - Group 3 simulation'),
+        el('small', {}, 'TUP - Group 3'),
       ]),
     ]),
     el('ul', { class: 'nav-list', id: 'nav-list' }, PAGES.map((p) => navItem(p))),
@@ -96,28 +92,20 @@ function renderShell() {
 
   const topbar = el('div', { class: 'topbar' }, [
     el('div', { class: 'topbar-left' }, [
-      el('div', {}, [
-        el('div', { class: 'topbar-title', id: 'page-title' }, 'Command Center'),
-        el('div', { class: 'topbar-sub' }, 'Smart Learning Center - Technological University of the Philippines'),
-      ]),
+      el('div', { class: 'topbar-title', id: 'page-title' }, 'Command Center'),
     ]),
     el('div', { class: 'topbar-right' }, [
       clockPill,
       connPill,
-      el('span', { class: 'user-pill' }, `${currentUser.name} (${currentUser.role})`),
+      el('span', { class: 'user-pill' }, `${currentUser.name} - ${currentUser.role}`),
       presentBtn,
       logoutBtn,
     ]),
   ]);
 
-  const emergencyBanner = el('div', { class: 'emergency-banner', id: 'emergency-banner' }, [
-    el('span', { html: icon('emergency'), style: 'width:16px;height:16px;flex:none;' }),
-    el('span', { id: 'emergency-banner-text' }, 'EMERGENCY ACTIVE - All smart doors unlocked. Follow evacuation procedures.'),
-  ]);
-
   const pageRoot = el('main', { class: 'page', id: 'page-root' });
 
-  root.appendChild(el('div', { class: 'shell' }, [sidebar, emergencyBanner, topbar, pageRoot]));
+  root.appendChild(el('div', { class: 'shell' }, [sidebar, topbar, pageRoot]));
 
   if (localStorage.getItem('slc_presentation') === '1') document.body.classList.add('presentation');
   presentBtn.addEventListener('click', () => {
@@ -133,9 +121,6 @@ function renderShell() {
     else if (state.connected) { connPill.classList.add('ok'); connPill.textContent = 'Connected'; }
     else if (state.socketUp === false) { connPill.classList.add('bad'); connPill.textContent = 'Offline'; }
     else { connPill.classList.add('warn'); connPill.textContent = 'Reconnecting...'; }
-
-    const banner = document.getElementById('emergency-banner');
-    if (banner) banner.classList.toggle('show', !!state.emergencyActive);
   });
 
   window.addEventListener('hashchange', route);

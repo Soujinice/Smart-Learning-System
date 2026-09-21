@@ -64,23 +64,18 @@ function render() {
   clearNode(container);
   const t = state.telemetry;
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Environment (Module C)'),
-      el('p', {}, 'Building-wide environmental monitoring. SF-03 is the one live sensor node; other zones are simulated.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Environment')]));
 
   const kpis = el('div', { class: 'grid grid-3' }, [
-    kpi('Temperature (SF-03)', `${(t?.environment?.temp_c ?? 0).toFixed(1)} C`, `Normal range ${thresholds?.env_temp_min ?? 20}-${thresholds?.env_temp_max ?? 28} C`),
-    kpi('Humidity (SF-03)', `${(t?.environment?.humidity_pct ?? 0).toFixed(0)} %`, `Normal range ${thresholds?.env_hum_min ?? 40}-${thresholds?.env_hum_max ?? 70} %`),
-    kpi('Air Quality Index', `${(t?.environment?.aqi ?? 0).toFixed(0)}`, 'Derived from MQ-2 low-level readings'),
+    kpi('Temperature - SF-03', `${(t?.environment?.temp_c ?? 0).toFixed(1)} C`, `Range ${thresholds?.env_temp_min ?? 20}-${thresholds?.env_temp_max ?? 28} C`),
+    kpi('Humidity - SF-03', `${(t?.environment?.humidity_pct ?? 0).toFixed(0)} %`, `Range ${thresholds?.env_hum_min ?? 40}-${thresholds?.env_hum_max ?? 70} %`),
+    kpi('Air Quality Index', `${(t?.environment?.aqi ?? 0).toFixed(0)}`, ''),
   ]);
   container.appendChild(kpis);
 
   chartCanvas = el('canvas', { height: '90' });
   container.appendChild(el('div', { class: 'card', style: 'margin-top:16px;' }, [
-    el('div', { class: 'card-title' }, ['Temperature & Humidity History (SF-03)', liveBadge(true)]),
+    el('div', { class: 'card-title' }, ['Temperature & Humidity - SF-03', liveBadge(true)]),
     chartCanvas,
   ]));
   if (window.Chart) {
@@ -92,7 +87,7 @@ function render() {
   container.appendChild(el('div', { class: 'section-title' }, 'Thresholds'));
   container.appendChild(card(null, [buildThresholdForm()]));
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Zone Table'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Zones'));
   const zoneRows = [
     { room: 'SF-03', name: 'Smart Classroom 1', temp: t?.environment?.temp_c, hum: t?.environment?.humidity_pct, state: t?.smart_room?.state, live: true },
     ...(state.virtualZones || []).map((z) => ({ room: z.room, name: z.name, temp: z.temp_c, hum: z.humidity_pct, state: z.state, live: false })),
@@ -114,9 +109,8 @@ function buildThresholdForm() {
   if (!thresholds) return el('div', { class: 'empty-state' }, 'Loading thresholds...');
   if (user?.role !== 'admin') {
     return el('div', {}, [
-      row('Temperature range', `${thresholds.env_temp_min} - ${thresholds.env_temp_max} C`),
-      row('Humidity range', `${thresholds.env_hum_min} - ${thresholds.env_hum_max} %`),
-      el('div', { class: 'sub', style: 'margin-top:8px;' }, 'Sign in as admin to edit thresholds.'),
+      row('Temperature', `${thresholds.env_temp_min} - ${thresholds.env_temp_max} C`),
+      row('Humidity', `${thresholds.env_hum_min} - ${thresholds.env_hum_max} %`),
     ]);
   }
   const tMin = el('input', { type: 'number', value: thresholds.env_temp_min, style: 'width:70px;' });
@@ -137,7 +131,7 @@ function buildThresholdForm() {
         toast('Thresholds synced to ESP32', 'success');
         render();
       },
-    }, 'Save & Sync to ESP32'),
+    }, 'Save'),
   ]);
 }
 

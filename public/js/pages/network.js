@@ -54,23 +54,17 @@ function render() {
   const stats = state.netStats;
   const t = state.telemetry;
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Network (Module E) and Block Diagram'),
-      el('p', {}, 'Internet -> Firewall -> Router -> Core Switch -> segments. All simulated in software inside the single ESP32.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Network')]));
 
-  container.appendChild(card('Live Topology', [el('div', { html: topologySvg() })]));
+  container.appendChild(card('Topology', [el('div', { html: topologySvg() })]));
 
   const grid2 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
-  grid2.appendChild(card('WAN / Wi-Fi Link (Wokwi-GUEST)', [
+  grid2.appendChild(card('Wi-Fi Link', [
     row('Status', t?.wifi?.connected ? 'Connected' : 'Offline'),
     row('RSSI', t?.wifi?.connected ? `${t.wifi.rssi} dBm` : '-'),
     row('IP', t?.wifi?.connected ? t.wifi.ip : '-'),
-    el('p', { class: 'sub' }, 'The building network simulation runs regardless of Wi-Fi status.'),
   ]));
-  grid2.appendChild(card('Scenario Buttons', [
+  grid2.appendChild(card('Scenarios', [
     el('div', { class: 'form-inline' }, [
       scenarioBtn('normal', 'Normal Load'),
       scenarioBtn('port_scan', 'Port Scan'),
@@ -84,36 +78,34 @@ function render() {
   container.appendChild(el('div', { class: 'section-title' }, 'Firewall Rules'));
   container.appendChild(card(null, [table(
     [
-      { key: 'id', label: 'Rule ID' }, { key: 'action', label: 'Action' }, { key: 'proto', label: 'Proto' },
+      { key: 'id', label: 'Rule' }, { key: 'action', label: 'Action' }, { key: 'proto', label: 'Proto' },
       { key: 'port', label: 'Port' }, { key: 'description', label: 'Description' }, { key: 'hits', label: 'Hits' },
     ],
     stats?.firewall_rules || [],
-    { emptyText: 'Awaiting net_stats from ESP32...' },
+    { emptyText: 'Awaiting data...' },
   )]));
 
   container.appendChild(el('div', { class: 'section-title' }, 'Blocked Hosts'));
   container.appendChild(card(null, [table(
-    [{ key: 'ip', label: 'IP' }, { key: 'reason', label: 'Reason' }, { key: 'expires_in_s', label: 'Expires in (s)' }],
+    [{ key: 'ip', label: 'IP' }, { key: 'reason', label: 'Reason' }, { key: 'expires_in_s', label: 'Expires (s)' }],
     stats?.blocked_hosts || [],
-    { emptyText: 'No hosts currently blocked.' },
+    { emptyText: 'None currently blocked.' },
   )]));
 
   const grid3 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
-  grid3.appendChild(card('Router / VLANs', [table(
+  grid3.appendChild(card('VLANs', [table(
     [
       { key: 'id', label: 'VLAN' }, { key: 'name', label: 'Name' },
-      { key: 'dhcp_leased', label: 'DHCP Leased' }, { key: 'dhcp_pool', label: 'DHCP Pool' },
-      { key: 'nat_translations', label: 'NAT Translations' },
+      { key: 'dhcp_leased', label: 'DHCP' }, { key: 'nat_translations', label: 'NAT' },
     ],
     stats?.vlans || [],
   )]));
-  grid3.appendChild(card('LMS Access Panel', [
-    el('p', { class: 'sub', style: 'margin-top:0;' }, 'Your request passes through the ESP32 firewall/router check (role -> VLAN -> port).'),
+  grid3.appendChild(card('LMS Access', [
     el('div', { class: 'form-inline' }, [
-      el('button', { class: 'pill-btn primary', onclick: async () => { await api.lmsRequest(443); toast('LMS access request sent'); } }, 'Request LMS Access (443)'),
-      el('button', { class: 'pill-btn', onclick: async () => { await api.lmsRequest(3389); toast('Request sent (should be denied)'); } }, 'Request Server Port 3389 (should deny)'),
+      el('button', { class: 'pill-btn primary', onclick: async () => { await api.lmsRequest(443); toast('Request sent'); } }, 'Request LMS (443)'),
+      el('button', { class: 'pill-btn', onclick: async () => { await api.lmsRequest(3389); toast('Request sent'); } }, 'Request Port 3389'),
     ]),
-    el('div', { class: 'section-title' }, 'Recent Results'),
+    el('div', { class: 'section-title' }, 'Recent'),
     table(
       [{ key: 'user', label: 'User' }, { key: 'port', label: 'Port' }, { key: 'permit', label: 'Result', render: (r) => r.permit ? 'PERMIT' : 'DENY' }, { key: 'rule_id', label: 'Rule' }, { key: 'vlan', label: 'VLAN' }],
       state.netResults.slice(0, 8),

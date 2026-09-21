@@ -18,15 +18,9 @@ function render() {
   if (!container) return;
   clearNode(container);
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Attendance & RFID (Module A)'),
-      el('p', {}, 'RFID is simulated: Wokwi has no RC522/PN532 part, so three pushbuttons plus virtual web taps stand in for the reader.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Attendance & RFID')]));
 
   const readerCard = card('Reader Status', [
-    row('Reader', 'Main Entrance - simulated (pushbuttons + web taps)'),
     row('Registered UIDs', String(registry.length)),
     row('Last tap', state.rfidTaps[0] ? `${state.rfidTaps[0].name || state.rfidTaps[0].uid} (${state.rfidTaps[0].result})` : 'None yet'),
   ], { titleRight: liveBadge(true) });
@@ -45,7 +39,7 @@ function render() {
       el('div', { class: 'sub' }, `Source: ${tapEvt.source}`),
     ]),
   ])));
-  container.appendChild(card('Live Tap Feed', [feed.children.length ? feed : el('div', { class: 'empty-state' }, 'No taps yet.')], { class: 'secondary-panel', bodyClass: '' }));
+  container.appendChild(card('Tap Feed', [feed.children.length ? feed : el('div', { class: 'empty-state' }, 'No taps yet.')], { class: 'secondary-panel', bodyClass: '' }));
 
   container.appendChild(el('div', { class: 'section-title' }, 'Registered Users'));
   container.appendChild(card(null, [table(
@@ -67,7 +61,7 @@ function render() {
       { key: 'name', label: 'Name' },
       { key: 'role', label: 'Role' },
       { key: 'room', label: 'Room' },
-      { key: 'source', label: 'Source', render: (r) => r.source === 'button' ? 'Pushbutton (LIVE)' : r.source === 'web' ? 'Virtual tap (LIVE cmd)' : r.source },
+      { key: 'source', label: 'Source', render: (r) => r.source === 'button' ? 'Pushbutton' : r.source === 'web' ? 'Virtual tap' : r.source },
     ],
     attendanceRows,
     { emptyText: 'No attendance recorded yet.' },
@@ -87,8 +81,7 @@ function buildTapPanel() {
     },
   }, 'Simulate Web Tap');
 
-  return card('Virtual Card-Tap Panel (from website)', [
-    el('p', { class: 'sub', style: 'margin-top:0;' }, 'Honest labeling: Wokwi has no native RFID part. Physical taps use CARD1/CARD2/CARD3 pushbuttons; this panel sends the same tap event over the wire as source "web".'),
+  return card('Virtual Tap', [
     el('div', { class: 'form-inline' }, [select, btn]),
   ]);
 }

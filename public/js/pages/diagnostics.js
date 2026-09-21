@@ -24,24 +24,19 @@ function render() {
   if (!container) return;
   clearNode(container);
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Diagnostics & Settings'),
-      el('p', {}, 'Pin map, raw serial console, protocol test, and the acceptance-test demo guide.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Diagnostics')]));
 
   const grid2 = el('div', { class: 'grid grid-2' });
-  grid2.appendChild(card('Bridge / Connection', [
-    row('Bridge mode', state.bridgeMode + (state.demoMode ? ' (DEMO MODE - no Wokwi connection)' : '')),
+  grid2.appendChild(card('Connection', [
+    row('Bridge', state.bridgeMode + (state.demoMode ? ' (DEMO)' : '')),
     row('Connected', state.connected ? 'Yes' : 'No'),
     row('Sim time', state.telemetry?.sim_time || '-'),
     el('div', { class: 'form-inline', style: 'margin-top:8px;' }, [
-      el('button', { class: 'pill-btn primary', onclick: async () => { await api.ping(); toast('ping sent - watch the console for the ack'); } }, 'Send Ping'),
+      el('button', { class: 'pill-btn primary', onclick: async () => { await api.ping(); toast('Ping sent'); } }, 'Send Ping'),
     ]),
   ]));
 
-  grid2.appendChild(card('Pin Values (last telemetry frame)', [
+  grid2.appendChild(card('Pin Values', [
     row('DHT22 temp/humidity', `${(state.telemetry?.environment?.temp_c ?? 0).toFixed(1)}C / ${(state.telemetry?.environment?.humidity_pct ?? 0).toFixed(0)}%`),
     row('PIR (SF-03)', state.telemetry?.environment?.motion ? 'HIGH (motion)' : 'LOW'),
     row('MQ-2 smoke %', `${(state.telemetry?.security?.smoke_pct ?? 0).toFixed(0)}%`),
@@ -51,11 +46,11 @@ function render() {
   ]));
   container.appendChild(grid2);
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Raw Serial Console'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Console'));
   const consoleBox = el('div', { class: 'console-box', id: 'console-box' }, state.consoleLines.map((l) => el('div', { class: 'line' }, l)));
   container.appendChild(card(null, [consoleBox]));
 
-  container.appendChild(el('div', { class: 'section-title' }, 'ESP32 Pin Map'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Pin Map'));
   container.appendChild(card(null, [table(
     [{ key: 'pin', label: 'Pin' }, { key: 'device', label: 'Device' }, { key: 'role', label: 'Role' }],
     PIN_MAP,
@@ -63,11 +58,11 @@ function render() {
 
   container.appendChild(el('div', { class: 'section-title' }, 'Asset Inventory'));
   container.appendChild(card(null, [table(
-    [{ key: 'component', label: 'Component' }, { key: 'designed', label: 'Designed Qty' }, { key: 'represented', label: 'Represented in this Simulation' }],
+    [{ key: 'component', label: 'Component' }, { key: 'designed', label: 'Qty' }, { key: 'represented', label: 'In this simulation' }],
     ASSET_INVENTORY,
   )]));
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Demo Guide (Acceptance Tests)'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Demo Guide'));
   container.appendChild(card(null, [table(
     [{ key: 'action', label: 'Action' }, { key: 'expected', label: 'Expected Result' }],
     DEMO_GUIDE.map(([action, expected]) => ({ action, expected })),

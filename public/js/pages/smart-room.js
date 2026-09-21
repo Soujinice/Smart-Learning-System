@@ -21,12 +21,7 @@ function render() {
   const t = state.telemetry;
   const rm = t?.smart_room;
 
-  container.appendChild(el('div', { class: 'page-header' }, [
-    el('div', {}, [
-      el('h1', {}, 'Smart Room (Module B) - Smart Classroom 1, SF-03'),
-      el('p', {}, 'The only physically-wired classroom. Other smart rooms are virtual and simulated by the server.'),
-    ]),
-  ]));
+  container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Smart Room - SF-03')]));
 
   const activeId = rm?.state || 'STANDBY';
   const stepper = el('div', { class: 'stepper card' }, STEPS.map((s, idx) => {
@@ -39,40 +34,37 @@ function render() {
   const grid2 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
 
   grid2.appendChild(card('Room Status', [
-    row('Room', 'SF-03 - Smart Classroom 1', true),
     row('State', activeId),
     row('Subject', rm?.subject || '-'),
-    row('Section', rm?.section || '-'),
     row('Faculty', rm?.faculty || '-'),
-    row('Attendance this session', rm?.attendance ?? 0),
+    row('Attendance', rm?.attendance ?? 0),
     row('Condition', rm?.abnormal ? 'ABNORMAL' : 'Normal'),
   ]));
 
-  grid2.appendChild(card('Device Power States', [
+  grid2.appendChild(card('Devices', [
     el('div', {}, [
-      el('span', { class: `device-chip ${t?.relay_sf03 ? 'on' : ''}` }, `Smart Board / Projector relay: ${t?.relay_sf03 ? 'ON' : 'OFF'}`),
-      el('span', { class: `device-chip ${activeId !== 'STANDBY' ? 'on' : ''}` }, `Sensors (DHT22 + PIR): ${activeId !== 'STANDBY' ? 'ACTIVE' : 'idle'}`),
-      el('span', { class: `device-chip ${activeId !== 'STANDBY' ? 'on' : ''}` }, `RFID attendance window: ${activeId !== 'STANDBY' ? 'OPEN' : 'closed'}`),
-      el('span', { class: 'device-chip on' }, 'Network: connected'),
+      el('span', { class: `device-chip ${t?.relay_sf03 ? 'on' : ''}` }, `Board/Projector relay: ${t?.relay_sf03 ? 'ON' : 'OFF'}`),
+      el('span', { class: `device-chip ${activeId !== 'STANDBY' ? 'on' : ''}` }, `Sensors: ${activeId !== 'STANDBY' ? 'ACTIVE' : 'idle'}`),
+      el('span', { class: `device-chip ${activeId !== 'STANDBY' ? 'on' : ''}` }, `Attendance window: ${activeId !== 'STANDBY' ? 'OPEN' : 'closed'}`),
     ]),
   ]));
 
   container.appendChild(grid2);
 
   const grid3 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
-  grid3.appendChild(card('Room Readings', [
-    row('Temperature', `${(t?.environment?.temp_c ?? 0).toFixed(1)} C (normal 20-28C)`),
-    row('Humidity', `${(t?.environment?.humidity_pct ?? 0).toFixed(0)} % (normal 40-70%)`),
-    row('Motion / presence', t?.environment?.motion ? 'Present' : 'None'),
+  grid3.appendChild(card('Readings', [
+    row('Temperature', `${(t?.environment?.temp_c ?? 0).toFixed(1)} C`),
+    row('Humidity', `${(t?.environment?.humidity_pct ?? 0).toFixed(0)} %`),
+    row('Motion', t?.environment?.motion ? 'Present' : 'None'),
   ], { titleRight: liveBadge(true) }));
 
   const alerts = state.events.filter((e) => e.kind === 'alert' && e.module === 'B').slice(0, 10);
-  grid3.appendChild(card('Room Alerts', alerts.length ? alerts.map((a) => el('div', { class: 'feed-item sev-warning' }, [
+  grid3.appendChild(card('Alerts', alerts.length ? alerts.map((a) => el('div', { class: 'feed-item sev-warning' }, [
     el('span', { class: 'ts' }, fmtTime(a.ts)), el('div', {}, a.message),
-  ])) : [el('div', { class: 'empty-state' }, 'No abnormal conditions logged.')], { class: 'feed' }));
+  ])) : [el('div', { class: 'empty-state' }, 'None logged.')], { class: 'feed' }));
   container.appendChild(grid3);
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Demo Controls'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Controls'));
   container.appendChild(card(null, [
     el('div', { class: 'form-inline' }, [
       el('button', { class: 'pill-btn primary', onclick: async () => { await api.classOverride('start'); toast('Class start requested', 'success'); } }, 'Start Class Now'),
@@ -81,7 +73,7 @@ function render() {
     ]),
   ]));
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Schedule (SF-03)'));
+  container.appendChild(el('div', { class: 'section-title' }, 'Schedule'));
   container.appendChild(card(null, [table(
     [
       { key: 'start', label: 'Start', render: (r) => minToHHMM(r.start) },
