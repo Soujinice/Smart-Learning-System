@@ -88,3 +88,17 @@ export function toast(msg, kind = 'info') {
 }
 
 export function clearNode(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+const loadedScripts = new Map();
+export function loadScript(src) {
+  if (loadedScripts.has(src)) return loadedScripts.get(src);
+  const p = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+  loadedScripts.set(src, p);
+  return p;
+}

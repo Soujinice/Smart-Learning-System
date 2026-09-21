@@ -58,7 +58,7 @@ function render() {
     doors ? el('div', {}, doors.map((d) => el('div', { class: 'device-chip on', style: `background:${d.locked ? 'var(--gray-50)' : 'var(--red-bg)'};color:${d.locked ? 'inherit' : 'var(--red-primary)'};border-color:${d.locked ? 'var(--border)' : '#f0c3c8'};` }, [
       `${d.name}: ${d.locked ? 'LOCKED' : 'UNLOCKED'} `,
       d.live ? '(LIVE)' : '(SIMULATED)',
-    ])) : el('div', { class: 'empty-state' }, 'Loading doors...'),
+    ]))) : el('div', { class: 'empty-state' }, 'Loading doors...'),
   ]));
 
   container.appendChild(el('div', { class: 'section-title' }, 'Notification / Acknowledgement Timeline'));

@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state, on as onStoreChange } from '../store.js';
-import { el, card, table, liveBadge, toast, clearNode } from '../ui.js';
+import { el, card, table, liveBadge, toast, clearNode, loadScript } from '../ui.js';
 
 let container = null;
 let unsub = null;
@@ -11,10 +11,21 @@ let chartCanvas = null;
 const history = { labels: [], temp: [], hum: [] };
 let lastSample = 0;
 
-async function ensureChart() {
-  if (chart || !chartCanvas) return;
-  const { Chart, registerables } = await import('/vendor/chartjs/chart.js');
-  Chart.register(...registerables);
+let chartLibPromise = null;
+function ensureChartLib() {
+  if (window.Chart) return Promise.resolve();
+  if (!chartLibPromise) chartLibPromise = loadScript('/vendor/chartjs/chart.umd.js');
+  return chartLibPromise;
+}
+
+// Every render() rebuilds the DOM (including a fresh <canvas>), so the
+// chart is destroyed and recreated each time rather than update()d in
+// place - Chart.js refuses to bind two live instances to the same canvas
+// lifecycle, and the canvas element itself does not survive a re-render.
+function mountChart() {
+  if (!window.Chart || !chartCanvas) return;
+  if (chart) { chart.destroy(); chart = null; }
+  const Chart = window.Chart;
   chart = new Chart(chartCanvas.getContext('2d'), {
     type: 'line',
     data: {
@@ -46,7 +57,6 @@ function sample() {
   history.temp.push(t.environment?.temp_c ?? null);
   history.hum.push(t.environment?.humidity_pct ?? null);
   if (history.labels.length > 40) { history.labels.shift(); history.temp.shift(); history.hum.shift(); }
-  if (chart) chart.update();
 }
 
 function render() {
@@ -73,7 +83,11 @@ function render() {
     el('div', { class: 'card-title' }, ['Temperature & Humidity History (SF-03)', liveBadge(true)]),
     chartCanvas,
   ]));
-  ensureChart().then(() => { if (chart) chart.update(); });
+  if (window.Chart) {
+    mountChart();
+  } else {
+    ensureChartLib().then(() => { if (container) mountChart(); });
+  }
 
   container.appendChild(el('div', { class: 'section-title' }, 'Thresholds'));
   container.appendChild(card(null, [buildThresholdForm()]));
