@@ -151,9 +151,12 @@ public:
   bool motionPresent() const { return lastMotion; }
   bool conditionAbnormal() const { return lastAbnormal; }
   uint32_t attendanceTotal() const { return attendanceCount; }
-  String currentSubject() const { return activeEntryIdx >= 0 ? schedule[activeEntryIdx].subject : (state != STANDBY ? "Ad-hoc session" : ""); }
-  String currentFaculty() const { return activeEntryIdx >= 0 ? schedule[activeEntryIdx].faculty : ""; }
-  String currentSection() const { return activeEntryIdx >= 0 ? schedule[activeEntryIdx].section : ""; }
+  String currentSubject() const {
+    if (activeEntryIdx >= 0) return schedule[activeEntryIdx].subject;
+    return (state != STANDBY) ? String("Ad-hoc session") : String("");
+  }
+  String currentFaculty() const { return (activeEntryIdx >= 0) ? schedule[activeEntryIdx].faculty : String(""); }
+  String currentSection() const { return (activeEntryIdx >= 0) ? schedule[activeEntryIdx].section : String(""); }
 
   void handleCommand(const String &type, JsonObjectConst payload) {
     if (type == "sync_schedule") {

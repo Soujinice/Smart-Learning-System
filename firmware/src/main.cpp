@@ -231,7 +231,7 @@ void sendTelemetry() {
   wifi["rssi"] = network.rssi();
   wifi["ip"] = network.ip();
 
-  doc["relay_sf03"] = smartRoom.stateName() != String("STANDBY");
+  doc["relay_sf03"] = strcmp(smartRoom.stateName(), "STANDBY") != 0;
   doc["attendance_today"] = attendanceToday;
   if (announcementText.length()) doc["announcement"] = announcementText;
 

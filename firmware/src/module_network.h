@@ -70,7 +70,7 @@ public:
 
   bool isWifiConnected() const { return WiFi.status() == WL_CONNECTED; }
   int32_t rssi() const { return isWifiConnected() ? WiFi.RSSI() : 0; }
-  String ip() const { return isWifiConnected() ? WiFi.localIP().toString() : ""; }
+  String ip() const { return isWifiConnected() ? WiFi.localIP().toString() : String(""); }
 
   void runScenario(const String &scenario) {
     currentScenario = scenario;
