@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "author": "Group 3 - Smart Learning Center",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 200, "left": 400, "attrs": {} },
+
+    { "type": "wokwi-ssd1306", "id": "oled_lobby_display", "top": -60, "left": 20, "attrs": { "i2cAddress": "0x3c" } },
+
+    { "type": "wokwi-dht22", "id": "dht22_sf03", "top": -60, "left": 260, "attrs": {} },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir_sf03", "top": -60, "left": 420, "attrs": {} },
+
+    { "type": "wokwi-mq2-gas-sensor", "id": "mq2_gf06", "top": -60, "left": 600, "attrs": {} },
+    { "type": "wokwi-slide-switch", "id": "flame_fallback_gf06", "top": -60, "left": 800, "attrs": {} },
+
+    { "type": "wokwi-hc-sr04", "id": "hcsr04_waste_lobby", "top": 60, "left": 1000, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot_metal_detector", "top": 220, "left": 1000, "attrs": { "value": "0" } },
+
+    { "type": "wokwi-pushbutton", "id": "btn_screen", "top": 360, "left": 1000, "attrs": { "color": "blue" } },
+    { "type": "wokwi-pushbutton", "id": "btn_card1_registered_student", "top": 440, "left": 1000, "attrs": { "color": "green" } },
+    { "type": "wokwi-pushbutton", "id": "btn_card2_registered_faculty", "top": 520, "left": 1000, "attrs": { "color": "green" } },
+    { "type": "wokwi-pushbutton", "id": "btn_card3_unregistered", "top": 600, "left": 1000, "attrs": { "color": "red" } },
+    { "type": "wokwi-pushbutton", "id": "btn_manual_pull_station", "top": 680, "left": 1000, "attrs": { "color": "red" } },
+
+    { "type": "wokwi-led", "id": "led_green_normal", "top": 460, "left": -60, "attrs": { "color": "green" } },
+    { "type": "wokwi-resistor", "id": "r_led_green", "top": 460, "left": -140, "attrs": { "value": "330" } },
+    { "type": "wokwi-led", "id": "led_yellow_warning", "top": 540, "left": -60, "attrs": { "color": "yellow" } },
+    { "type": "wokwi-resistor", "id": "r_led_yellow", "top": 540, "left": -140, "attrs": { "value": "330" } },
+    { "type": "wokwi-led", "id": "led_red_emergency", "top": 620, "left": -60, "attrs": { "color": "red" } },
+    { "type": "wokwi-resistor", "id": "r_led_red", "top": 620, "left": -140, "attrs": { "value": "330" } },
+
+    { "type": "wokwi-buzzer", "id": "buzzer_alarm", "top": 700, "left": -60, "attrs": { "volume": "0.1" } },
+
+    { "type": "wokwi-relay-module", "id": "relay_sf03_devices", "top": 340, "left": -220, "attrs": {} },
+    { "type": "wokwi-led", "id": "led_sf03_smartboard_load", "top": 340, "left": -400, "attrs": { "color": "blue" } },
+    { "type": "wokwi-resistor", "id": "r_led_sf03_load", "top": 340, "left": -480, "attrs": { "value": "330" } },
+
+    { "type": "wokwi-servo", "id": "servo_main_entrance_door", "top": 120, "left": -260, "attrs": { "horn": "single" } },
+
+    { "type": "wokwi-resistor", "id": "r_flame_pulldown", "top": 20, "left": 800, "attrs": { "value": "10000" } }
+  ],
+
+  "connections": [
+    ["esp:TX0", "$serialMonitor:RX", "", []],
+    ["esp:RX0", "$serialMonitor:TX", "", []],
+
+    ["esp:D21", "oled_lobby_display:SDA", "green", []],
+    ["esp:D22", "oled_lobby_display:SCL", "yellow", []],
+    ["oled_lobby_display:VCC", "esp:3V3", "red", []],
+    ["oled_lobby_display:GND", "esp:GND.1", "black", []],
+
+    ["esp:D15", "dht22_sf03:SDA", "green", []],
+    ["dht22_sf03:VCC", "esp:3V3", "red", []],
+    ["dht22_sf03:GND", "esp:GND.1", "black", []],
+
+    ["esp:D13", "pir_sf03:OUT", "green", []],
+    ["pir_sf03:VCC", "esp:5V", "red", []],
+    ["pir_sf03:GND", "esp:GND.1", "black", []],
+
+    ["esp:D34", "mq2_gf06:AOUT", "green", []],
+    ["mq2_gf06:VCC", "esp:5V", "red", []],
+    ["mq2_gf06:GND", "esp:GND.2", "black", []],
+
+    ["esp:D35", "flame_fallback_gf06:2", "green", []],
+    ["flame_fallback_gf06:1", "esp:3V3", "red", []],
+    ["flame_fallback_gf06:2", "r_flame_pulldown:1", "black", []],
+    ["r_flame_pulldown:2", "esp:GND.2", "black", []],
+
+    ["esp:D5", "hcsr04_waste_lobby:TRIG", "green", []],
+    ["esp:D18", "hcsr04_waste_lobby:ECHO", "blue", []],
+    ["hcsr04_waste_lobby:VCC", "esp:5V", "red", []],
+    ["hcsr04_waste_lobby:GND", "esp:GND.2", "black", []],
+
+    ["esp:D33", "pot_metal_detector:SIG", "green", []],
+    ["pot_metal_detector:VCC", "esp:3V3", "red", []],
+    ["pot_metal_detector:GND", "esp:GND.2", "black", []],
+
+    ["esp:D14", "btn_screen:1.l", "green", []],
+    ["btn_screen:2.l", "esp:GND.3", "black", []],
+
+    ["esp:D25", "btn_card1_registered_student:1.l", "green", []],
+    ["btn_card1_registered_student:2.l", "esp:GND.3", "black", []],
+
+    ["esp:D26", "btn_card2_registered_faculty:1.l", "green", []],
+    ["btn_card2_registered_faculty:2.l", "esp:GND.3", "black", []],
+
+    ["esp:D27", "btn_card3_unregistered:1.l", "green", []],
+    ["btn_card3_unregistered:2.l", "esp:GND.3", "black", []],
+
+    ["esp:D4", "btn_manual_pull_station:1.l", "green", []],
+    ["btn_manual_pull_station:2.l", "esp:GND.3", "black", []],
+
+    ["esp:D16", "r_led_green:2", "green", []],
+    ["r_led_green:1", "led_green_normal:A", "green", []],
+    ["led_green_normal:C", "esp:GND.1", "black", []],
+
+    ["esp:D17", "r_led_yellow:2", "yellow", []],
+    ["r_led_yellow:1", "led_yellow_warning:A", "yellow", []],
+    ["led_yellow_warning:C", "esp:GND.1", "black", []],
+
+    ["esp:D19", "r_led_red:2", "red", []],
+    ["r_led_red:1", "led_red_emergency:A", "red", []],
+    ["led_red_emergency:C", "esp:GND.1", "black", []],
+
+    ["esp:D23", "buzzer_alarm:1", "green", []],
+    ["buzzer_alarm:2", "esp:GND.1", "black", []],
+
+    ["esp:D32", "relay_sf03_devices:IN", "green", []],
+    ["relay_sf03_devices:VCC", "esp:5V", "red", []],
+    ["relay_sf03_devices:GND", "esp:GND.3", "black", []],
+    ["relay_sf03_devices:COM", "esp:5V", "red", []],
+    ["relay_sf03_devices:NO", "r_led_sf03_load:2", "blue", []],
+    ["r_led_sf03_load:1", "led_sf03_smartboard_load:A", "blue", []],
+    ["led_sf03_smartboard_load:C", "esp:GND.3", "black", []],
+
+    ["esp:D2", "servo_main_entrance_door:PWM", "green", []],
+    ["servo_main_entrance_door:V+", "esp:5V", "red", []],
+    ["servo_main_entrance_door:GND", "esp:GND.3", "black", []]
+  ],
+
+  "dependencies": {}
+}

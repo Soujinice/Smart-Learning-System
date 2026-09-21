@@ -1,0 +1,10 @@
+[wokwi]
+version = 1
+firmware = ".pio/build/esp32dev/firmware.bin"
+elf = ".pio/build/esp32dev/firmware.elf"
+
+# Exposes the simulated ESP32's UART0 as a Telnet/RFC2217 server on
+# localhost:4000. The Node.js bridge (server/bridge.js) connects to this
+# port as a plain TCP client, strips the RFC2217/Telnet IAC negotiation
+# bytes, and treats the remaining stream as the firmware's serial output.
+rfc2217ServerPort = 4000
