@@ -5,7 +5,6 @@ import { el, card, table, fmtTime, liveBadge, gauge, toast, clearNode } from '..
 let container = null;
 let unsub = null;
 let thresholds = null;
-let user = null;
 
 const LEVEL_LABELS = ['Normal', 'Watch', 'Warning', 'Danger', 'CONFIRMED EMERGENCY'];
 const LEVEL_COLORS = ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--amber)', 'var(--red-primary)'];
@@ -21,9 +20,9 @@ function render() {
   const grid2 = el('div', { class: 'grid grid-2' });
   grid2.appendChild(card('Smoke / Fire - GF-06', [
     gauge(t?.security?.smoke_pct ?? 0, LEVEL_LABELS[level], () => LEVEL_COLORS[level]),
-    row('Flame', t?.security?.flame ? 'DETECTED' : 'Clear'),
     row('Intrusion check', t?.security?.intrusion ? 'SUSPECTED' : 'Normal'),
     row('False alarms', t?.security?.false_alarms ?? 0),
+    thresholds ? row('Thresholds L1-L4', `${thresholds.smoke_l1}/${thresholds.smoke_l2}/${thresholds.smoke_l3}/${thresholds.smoke_l4}%`) : null,
   ], { titleRight: liveBadge(true) }));
 
   grid2.appendChild(card('CCTV - SF-03', [
@@ -49,15 +48,11 @@ function render() {
   ] : [el('div', { class: 'empty-state' }, 'No hold active.')]));
   container.appendChild(metalGrid);
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Thresholds'));
-  container.appendChild(card(null, [buildThresholdForm()]));
-
   const grid3 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
   grid3.appendChild(card('False Alarms', state.falseAlarms.length ? [table(
     [
       { key: 'ts', label: 'Time', render: (r) => fmtTime(r.ts) },
       { key: 'smoke_pct', label: 'Smoke %', render: (r) => `${(r.smoke_pct ?? 0).toFixed(0)}%` },
-      { key: 'flame', label: 'Flame', render: (r) => r.flame ? 'yes' : 'no' },
       { key: 'reason', label: 'Reason' },
     ],
     state.falseAlarms.slice(0, 15),
@@ -89,35 +84,6 @@ async function decide(allow) {
   try { await api.screeningDecision(allow); toast(allow ? 'Entry allowed' : 'Entry denied', 'success'); } catch (e) { toast(e.message, 'error'); }
 }
 
-function buildThresholdForm() {
-  if (!thresholds) return el('div', { class: 'empty-state' }, 'Loading thresholds...');
-  if (user?.role !== 'admin') {
-    return el('div', {}, [
-      row('Smoke L1-L4', `${thresholds.smoke_l1} / ${thresholds.smoke_l2} / ${thresholds.smoke_l3} / ${thresholds.smoke_l4} %`),
-      row('Metal detector', `${thresholds.metal_threshold_pct}%`),
-    ]);
-  }
-  const l1 = numInput(thresholds.smoke_l1), l2 = numInput(thresholds.smoke_l2), l3 = numInput(thresholds.smoke_l3), l4 = numInput(thresholds.smoke_l4);
-  const metal = numInput(thresholds.metal_threshold_pct);
-  return el('div', { class: 'form-inline' }, [
-    labeled('Smoke L1', l1), labeled('L2', l2), labeled('L3', l3), labeled('L4', l4),
-    labeled('Metal detector', metal),
-    el('button', {
-      class: 'pill-btn primary', onclick: async () => {
-        const r = await api.saveThresholds({
-          smoke_l1: Number(l1.value), smoke_l2: Number(l2.value), smoke_l3: Number(l3.value), smoke_l4: Number(l4.value),
-          metal_threshold_pct: Number(metal.value),
-        });
-        thresholds = r.thresholds;
-        toast('Saved', 'success');
-        render();
-      },
-    }, 'Save'),
-  ]);
-}
-
-function numInput(v) { return el('input', { type: 'number', value: v, style: 'width:70px;' }); }
-function labeled(label, input) { return el('div', { class: 'form-row' }, [el('label', {}, label), input]); }
 function row(label, value) {
   return el('div', { style: 'display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;' }, [
     el('span', { style: 'color:var(--text-muted);' }, label),
@@ -126,9 +92,8 @@ function row(label, value) {
 }
 
 export default {
-  mount(rootEl, ctx) {
+  mount(rootEl) {
     container = rootEl;
-    user = ctx.user;
     Promise.all([api.thresholds(), api.screenings(), api.falseAlarms()]).then(([th, sc, fa]) => {
       thresholds = th.thresholds;
       state.screenings = sc.screenings;

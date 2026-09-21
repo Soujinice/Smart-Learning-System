@@ -10,7 +10,7 @@ const DEMO_GUIDE = [
   ['Tap CARD1', 'Attendance recorded, door unlocks for 3s. CARD3 gives Access Denied, nothing recorded.'],
   ['Start class now (SF-03)', 'Relay ON, room ACTIVE. Raise DHT22 temp above 28C -> alert. End class -> data saved, relay OFF.'],
   ['Raise MQ-2 briefly then lower', '"Possible False Alarm" is logged, no emergency triggered.'],
-  ['Raise MQ-2 high & sustained, or with flame', 'CONFIRMED EMERGENCY: all doors unlock, alarm, notification; acknowledge, drill/clear, doors return to locked.'],
+  ['Raise MQ-2 high & sustained', 'CONFIRMED EMERGENCY: all doors unlock, alarm, notification; acknowledge, drill/clear, doors return to locked.'],
   ['Press the manual pull station', 'Immediate emergency path (bypasses D verification).'],
   ['SCREEN with potentiometer above threshold', 'Metal alert, entry held; Allow/Deny from Security & Fire page. While held, CARD1 will not unlock the door.'],
   ['PIR trigger after building hours', 'Intrusion alert; during class hours it is presence only.'],
@@ -40,7 +40,6 @@ function render() {
     row('DHT22 temp/humidity', `${(state.telemetry?.environment?.temp_c ?? 0).toFixed(1)}C / ${(state.telemetry?.environment?.humidity_pct ?? 0).toFixed(0)}%`),
     row('PIR (SF-03)', state.telemetry?.environment?.motion ? 'HIGH (motion)' : 'LOW'),
     row('MQ-2 smoke %', `${(state.telemetry?.security?.smoke_pct ?? 0).toFixed(0)}%`),
-    row('Flame fallback switch', state.telemetry?.security?.flame ? 'HIGH (flame)' : 'LOW'),
     row('HC-SR04 waste fill', `${(state.telemetry?.waste?.fill_pct ?? 0).toFixed(0)}%`),
     row('Servo (main door)', state.telemetry?.doors?.main_entrance_unlocked ? '90deg (unlocked)' : '0deg (locked)'),
   ]));

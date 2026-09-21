@@ -1,9 +1,7 @@
 // Module D - Security & Fire.
-// Reads the MQ-2 smoke/gas sensor (GF-06 Cafeteria), the flame sensor
-// fallback (see README - Wokwi has no native flame-sensor part, so a slide
-// switch labeled FLAME stands in for it), and the shared PIR (SF-03) for
-// building-hours intrusion detection. Implements a five-level smoke scale
-// with false-alarm rejection before ever calling into module G.
+// Reads the MQ-2 smoke/gas sensor (GF-06 Cafeteria) and the shared PIR
+// (SF-03) for building-hours intrusion detection. Implements a five-level
+// smoke scale with false-alarm rejection before ever calling into module G.
 #pragma once
 
 #include <Arduino.h>
@@ -23,7 +21,6 @@ public:
   std::function<void()> onManualPull;                              // -> module G (bypasses D)
 
   void begin() {
-    pinMode(PIN_FLAME_DO, INPUT);
     pinMode(PIN_BTN_PULL_STATION, INPUT_PULLUP);
     lastTempSampleC = smartRoom.temperature();
     lastTempSampleMs = millis();
@@ -48,7 +45,6 @@ public:
   bool isBelowWarning() const { return level < L2_WARNING; }
   SmokeLevel currentLevel() const { return level; }
   float smokePct() const { return smokePercent; }
-  bool flameActive() const { return flameOn; }
   bool intrusionActive() const { return intrusion; }
   bool presenceActive() const { return pirOn; }
   uint32_t falseAlarmCount() const { return falseAlarms; }
@@ -77,9 +73,6 @@ private:
   float smokePercent = 5.0f;
   float smokeBuf[5] = {5, 5, 5, 5, 5};
   uint8_t smokeBufIdx = 0;
-
-  bool flameOn = false;
-  unsigned long flameSince = 0;
 
   float thL1 = Defaults::SMOKE_L1_WATCH, thL2 = Defaults::SMOKE_L2_WARNING,
         thL3 = Defaults::SMOKE_L3_DANGER, thL4 = Defaults::SMOKE_L4_EMERGENCY;
@@ -135,18 +128,12 @@ private:
   void evaluateSmoke() {
     Proto::flow("D", "D_DETECT");
     smokePercent = readSmokeAveraged();
-    flameOn = digitalRead(PIN_FLAME_DO) == HIGH;
-    if (flameOn) {
-      if (flameSince == 0) flameSince = millis();
-    } else {
-      flameSince = 0;
-    }
     updateTempRiseRate();
 
     Proto::flow("D", "D_READ_LEVEL");
     Proto::flow("D", "D_COMPARE");
 
-    bool aboveWarn = smokePercent >= thL2 || flameOn;
+    bool aboveWarn = smokePercent >= thL2;
     Proto::flow("D", "D_ABOVE_WARN", aboveWarn ? "YES" : "NO");
 
     if (!aboveWarn) {
@@ -167,7 +154,7 @@ private:
 
     Proto::flow("D", "D_WARNING");
     setLevel(smokePercent >= thL3 ? L3_DANGER : L2_WARNING);
-    indicators.setLevel(smokePercent >= thL3 ? Indicators::LEVEL_WARNING : Indicators::LEVEL_WARNING);
+    indicators.setLevel(Indicators::LEVEL_WARNING);
     if (level == L3_DANGER) {
       indicators.beep(1, 200, 200); // intermittent pre-alert buzzer
       if (l3SustainedSince == 0) l3SustainedSince = millis();
@@ -197,18 +184,15 @@ private:
   bool confirmationSatisfied() {
     bool smokeL3Sustained = level == L3_DANGER && l3SustainedSince != 0 &&
                              (millis() - l3SustainedSince) >= Defaults::VERIFY_WINDOW_MS;
-    bool flameWithSmokeL2 = flameOn && smokePercent >= thL2;
-    bool flameSustained = flameOn && flameSince != 0 &&
-                           (millis() - flameSince) >= Defaults::FLAME_SUSTAIN_MS;
     bool rapidRise = tempRiseRateCPerMin >= Defaults::TEMP_RISE_LIMIT_C_PER_MIN;
-    return smokeL3Sustained || flameWithSmokeL2 || flameSustained || rapidRise;
+    return smokeL3Sustained || rapidRise;
   }
 
   void runVerificationCycle() {
     if (!verifying) return;
     Proto::flow("D", "D_MONITOR");
 
-    bool persists = smokePercent >= thL2 || flameOn;
+    bool persists = smokePercent >= thL2;
     Proto::flow("D", "D_PERSISTS", (persists && confirmationSatisfied()) ? "YES" : "NO");
 
     if (confirmationSatisfied()) {
@@ -218,7 +202,7 @@ private:
 
     if (!persists) {
       verifying = false;
-      logFalseAlarm("smoke/flame reading dropped below warning level within the verification window");
+      logFalseAlarm("smoke reading dropped below warning level within the verification window");
       setLevel(L1_WATCH);
       indicators.setLevel(Indicators::LEVEL_NORMAL);
       return;
@@ -237,8 +221,7 @@ private:
     Proto::flow("D", "D_CONFIRMED", "YES");
     Proto::flow("D", "D_SEND_SIGNAL");
 
-    String reason = "Confirmed fire/smoke emergency (smoke " + String(smokePercent, 0) + "%, flame " +
-                     String(flameOn ? "detected" : "clear") + ")";
+    String reason = "Confirmed fire/smoke emergency (smoke " + String(smokePercent, 0) + "%)";
     if (onConfirmedEmergency) onConfirmedEmergency(reason);
   }
 
@@ -249,7 +232,6 @@ private:
     JsonDocument doc = Proto::begin("false_alarm");
     doc["count"] = falseAlarms;
     doc["smoke_pct"] = smokePercent;
-    doc["flame"] = flameOn;
     doc["reason"] = reasonDetail;
     doc["ts"] = simClock.hhmm();
     Proto::send(doc);

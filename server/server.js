@@ -410,6 +410,19 @@ app.post('/api/emergency/:action', requireRole('admin', 'security'), (req, res) 
   res.json({ ok: true });
 });
 
+// --- Modules (per-subsystem enable/disable, so you can test one part at a time) ---
+const MODULE_NAMES = ['rfid', 'smart_room', 'environment', 'security', 'metal_detector', 'waste', 'network'];
+app.get('/api/modules', (req, res) => {
+  const modules = lastTelemetry?.modules || Object.fromEntries(MODULE_NAMES.map((m) => [m, true]));
+  res.json({ ok: true, modules });
+});
+app.post('/api/modules/:name/toggle', requireRole('admin'), (req, res) => {
+  const { name } = req.params;
+  if (!MODULE_NAMES.includes(name)) return res.status(400).json({ ok: false, error: 'unknown module' });
+  sendCommand('module_toggle', { module: name, enabled: !!req.body?.enabled });
+  res.json({ ok: true });
+});
+
 // --- Network ---
 app.post('/api/network/scenario', requireRole('admin', 'security'), (req, res) => {
   sendCommand('net_scenario', { scenario: req.body?.scenario || 'normal' });

@@ -14,7 +14,6 @@
 #define PIN_PIR              13
 
 #define PIN_MQ2_AOUT         34   // ADC1_CH6 - smoke/gas analog level
-#define PIN_FLAME_DO         35   // ADC1_CH7 pin used as digital input (fallback slide switch)
 
 #define PIN_HCSR04_TRIG       5
 #define PIN_HCSR04_ECHO      18
@@ -64,7 +63,6 @@ namespace Defaults {
   constexpr float SMOKE_L4_EMERGENCY = 80.0f;
   constexpr uint8_t SMOKE_CONFIRM_SAMPLES = 4;      // consecutive samples above threshold
   constexpr unsigned long VERIFY_WINDOW_MS = 5000;  // condition must persist this long
-  constexpr unsigned long FLAME_SUSTAIN_MS = 2000;  // flame alone confirms after this long
   constexpr float TEMP_RISE_LIMIT_C_PER_MIN = 6.0f; // rate-of-rise confirmation
 
   // Metal detector (module F) - percent of potentiometer range

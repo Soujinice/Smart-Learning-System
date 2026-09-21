@@ -1,6 +1,9 @@
 // Digital Information Display - Main Lobby (GF-01), SSD1306 128x64 I2C.
-// Rotates through five status pages every 3 seconds; a full-screen
-// EMERGENCY page overrides everything while module G is ACTIVE/RESPONSE.
+// Rotates every 3 seconds through one page per currently-enabled module
+// (plus an always-on building-status page), so the display only shows data
+// for whatever you actually have wired/running right now - see the
+// Controls page's module toggles. A full-screen EMERGENCY page overrides
+// everything while module G is ACTIVE/RESPONSE.
 #pragma once
 
 #include <Arduino.h>
@@ -14,7 +17,7 @@ struct DisplaySnapshot {
   bool emergencyActive = false;
   String emergencyState = "IDLE";
 
-  float smokePct = 0; bool flame = false; uint8_t smokeLevel = 0;
+  float smokePct = 0; uint8_t smokeLevel = 0;
   float roomTempC = 24; float roomHumPct = 55; bool roomMotion = false;
   String smartRoomState = "STANDBY";
 
@@ -25,6 +28,14 @@ struct DisplaySnapshot {
   uint8_t blockedHosts = 0;
 
   float wastePct = 0; bool wasteFull = false;
+
+  // Which modules are currently enabled (see main.cpp ModuleFlags) - the
+  // matching OLED page is skipped in rotation when its module is off.
+  bool smartRoomEnabled = true;
+  bool rfidEnabled = true;
+  bool securityEnabled = true;
+  bool networkEnabled = true;
+  bool wasteEnabled = true;
 };
 
 class DisplayModule {
@@ -46,31 +57,44 @@ public:
 
   void loop(const DisplaySnapshot &snap) {
     if (!ready) return;
-    unsigned long now = millis();
 
     if (snap.emergencyActive) {
       drawEmergency(snap);
       return;
     }
 
+    // Build the active page list fresh each call - cheap (<=6 entries) and
+    // lets a module toggle take effect on the very next rotation.
+    uint8_t activePages[6];
+    uint8_t activeCount = 0;
+    activePages[activeCount++] = 0; // building status - always shown
+    if (snap.smartRoomEnabled) activePages[activeCount++] = 1;
+    if (snap.rfidEnabled) activePages[activeCount++] = 2;
+    if (snap.securityEnabled) activePages[activeCount++] = 3;
+    if (snap.networkEnabled) activePages[activeCount++] = 4;
+    if (snap.wasteEnabled) activePages[activeCount++] = 5;
+
+    unsigned long now = millis();
     if (now - lastSwitch >= 3000) {
       lastSwitch = now;
-      page = (page + 1) % 5;
+      pageIndex = (pageIndex + 1) % activeCount;
     }
+    if (pageIndex >= activeCount) pageIndex = 0;
 
-    switch (page) {
+    switch (activePages[pageIndex]) {
       case 0: drawBuilding(snap); break;
       case 1: drawEnvironment(snap); break;
       case 2: drawAccess(snap); break;
-      case 3: drawNetwork(snap); break;
-      case 4: drawWaste(snap); break;
+      case 3: drawSecurity(snap); break;
+      case 4: drawNetwork(snap); break;
+      case 5: drawWaste(snap); break;
     }
   }
 
 private:
   Adafruit_SSD1306 oled { 128, 64, &Wire, -1 };
   bool ready = false;
-  uint8_t page = 0;
+  uint8_t pageIndex = 0;
   unsigned long lastSwitch = 0;
 
   void header(const char *title, const String &time) {
@@ -107,8 +131,14 @@ private:
   void drawAccess(const DisplaySnapshot &s) {
     header("ACCESS / ATTENDANCE", s.simTime);
     oled.print("Attendance today: "); oled.println(s.attendanceToday);
+    oled.print("Door: "); oled.println(s.doorsUnlocked > 0 ? "UNLOCKED" : "locked");
+    oled.display();
+  }
+
+  void drawSecurity(const DisplaySnapshot &s) {
+    header("SECURITY & FIRE", s.simTime);
     oled.print("Smoke level: L"); oled.println(s.smokeLevel);
-    oled.print("Flame: "); oled.println(s.flame ? "DETECTED" : "clear");
+    oled.print("Smoke: "); oled.print(s.smokePct, 0); oled.println(" %");
     oled.display();
   }
 

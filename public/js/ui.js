@@ -89,6 +89,30 @@ export function toast(msg, kind = 'info') {
 
 export function clearNode(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
+// Modern toggle switch. onChange receives the new boolean state; the
+// caller decides whether/when to actually call the API (so it can revert
+// the switch on failure).
+export function toggleSwitch(checked, onChange, disabled = false) {
+  const input = el('input', { type: 'checkbox', disabled: disabled ? 'disabled' : null });
+  input.checked = !!checked;
+  input.addEventListener('change', () => onChange(input.checked, input));
+  return el('label', { class: 'switch' }, [input, el('span', { class: 'switch-track' })]);
+}
+
+// A slider paired with a live numeric readout. The number only updates
+// visually while dragging (input event); onCommit fires once on release
+// (change event) so it doesn't flood the API with a request per pixel.
+export function sliderRow(label, value, min, max, step, onCommit, unit = '') {
+  const valueLabel = el('span', { class: 'slider-value' }, `${value}${unit}`);
+  const input = el('input', { type: 'range', min: String(min), max: String(max), step: String(step), value: String(value) });
+  input.addEventListener('input', () => { valueLabel.textContent = `${input.value}${unit}`; });
+  input.addEventListener('change', () => onCommit(Number(input.value)));
+  return el('div', { class: 'slider-row' }, [
+    el('div', { class: 'slider-row-head' }, [el('span', {}, label), valueLabel]),
+    input,
+  ]);
+}
+
 const loadedScripts = new Map();
 export function loadScript(src) {
   if (loadedScripts.has(src)) return loadedScripts.get(src);

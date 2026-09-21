@@ -21,7 +21,7 @@ export default class DemoDevice extends EventEmitter {
 
     this.state = {
       temp: 24, hum: 55, motion: false,
-      smoke: 6, flame: false, smokeLevel: 0,
+      smoke: 6, smokeLevel: 0,
       wastePct: 15, wasteFull: false,
       metalThreshold: 55, holdActive: false,
       doorsUnlocked: 0, overrideActive: false,
@@ -29,6 +29,11 @@ export default class DemoDevice extends EventEmitter {
       smartRoomState: 'STANDBY',
       attendanceToday: 0,
       wifiConnected: true, rssi: -58, ip: '10.0.0.42',
+    };
+
+    this.modules = {
+      rfid: true, smart_room: true, environment: true, security: true,
+      metal_detector: true, waste: true, network: true,
     };
   }
 
@@ -68,29 +73,40 @@ export default class DemoDevice extends EventEmitter {
   _tick() {
     this.simMinutes = (this.simMinutes + this.scale) % 1440;
 
-    this.state.temp += (Math.random() - 0.5) * 0.3;
-    this.state.temp = Math.max(18, Math.min(32, this.state.temp));
-    this.state.hum += (Math.random() - 0.5) * 0.6;
-    this.state.hum = Math.max(30, Math.min(85, this.state.hum));
-    this.state.motion = Math.random() < 0.3;
-    this.state.smoke = Math.max(2, Math.min(18, this.state.smoke + (Math.random() - 0.5) * 2));
-    if (!this.state.wasteFull) this.state.wastePct = Math.min(100, this.state.wastePct + 0.04);
-    this.state.wasteFull = this.state.wastePct >= 80;
+    const m = this.modules;
 
-    const active = this.schedule.find((s) => this.simMinutes >= s.start && this.simMinutes < s.end);
-    if (this.state.emergencyState === 'IDLE') {
+    if (m.environment) {
+      this.state.temp += (Math.random() - 0.5) * 0.3;
+      this.state.temp = Math.max(18, Math.min(32, this.state.temp));
+      this.state.hum += (Math.random() - 0.5) * 0.6;
+      this.state.hum = Math.max(30, Math.min(85, this.state.hum));
+      this.state.motion = Math.random() < 0.3;
+    }
+    if (m.security) {
+      this.state.smoke = Math.max(2, Math.min(18, this.state.smoke + (Math.random() - 0.5) * 2));
+    }
+    if (m.waste && !this.state.wasteFull) {
+      this.state.wastePct = Math.min(100, this.state.wastePct + 0.04);
+      this.state.wasteFull = this.state.wastePct >= 80;
+    }
+
+    const active = m.smart_room ? this.schedule.find((s) => this.simMinutes >= s.start && this.simMinutes < s.end) : null;
+    if (m.smart_room && this.state.emergencyState === 'IDLE') {
       this.state.smartRoomState = active ? 'IN_SESSION' : 'STANDBY';
     }
 
     // Keep the Flow Tracker page alive in demo mode by cycling the two
-    // continuous-monitoring flowcharts (C and D), same as the firmware.
-    this._flow('C', 'C_SENSOR'); this._flow('C', 'C_READ'); this._flow('C', 'C_PROCESS');
-    this._flow('C', 'C_NORMAL', 'YES'); this._flow('C', 'C_DISPLAY_STATUS');
-    if (this.state.emergencyState === 'IDLE') {
+    // continuous-monitoring flowcharts (C and D), same as the firmware -
+    // but only for modules that are actually enabled.
+    if (m.environment) {
+      this._flow('C', 'C_SENSOR'); this._flow('C', 'C_READ'); this._flow('C', 'C_PROCESS');
+      this._flow('C', 'C_NORMAL', 'YES'); this._flow('C', 'C_DISPLAY_STATUS');
+    }
+    if (m.security && this.state.emergencyState === 'IDLE') {
       this._flow('D', 'D_DETECT'); this._flow('D', 'D_READ_LEVEL'); this._flow('D', 'D_COMPARE');
       this._flow('D', 'D_ABOVE_WARN', 'NO');
     }
-    if (this.state.smartRoomState === 'IN_SESSION') {
+    if (m.smart_room && this.state.smartRoomState === 'IN_SESSION') {
       this._flow('B', 'B_SENSOR_DATA'); this._flow('B', 'B_PROCESS_SENSOR'); this._flow('B', 'B_COND_NORMAL', 'YES'); this._flow('B', 'B_DISPLAY_NORMAL');
     }
 
@@ -101,7 +117,7 @@ export default class DemoDevice extends EventEmitter {
       uptime_s: Math.floor(process.uptime()),
       heap_free: 180000,
       environment: { temp_c: this.state.temp, humidity_pct: this.state.hum, motion: this.state.motion, aqi: this.state.smoke * 5 },
-      security: { smoke_pct: this.state.smoke, smoke_level: this.state.smokeLevel, flame: this.state.flame, intrusion: false, false_alarms: 0 },
+      security: { smoke_pct: this.state.smoke, smoke_level: this.state.smokeLevel, intrusion: false, false_alarms: 0 },
       smart_room: {
         room: ROOM, state: this.state.smartRoomState,
         subject: active ? active.subject : '', section: active ? active.section : '', faculty: active ? active.faculty : '',
@@ -114,6 +130,7 @@ export default class DemoDevice extends EventEmitter {
       wifi: { connected: this.state.wifiConnected, rssi: this.state.rssi, ip: this.state.ip },
       relay_sf03: this.state.smartRoomState !== 'STANDBY',
       attendance_today: this.state.attendanceToday,
+      modules: this.modules,
     });
   }
 
@@ -194,6 +211,15 @@ export default class DemoDevice extends EventEmitter {
       case 'set_thresholds':
         if (msg.metal_threshold_pct) this.state.metalThreshold = msg.metal_threshold_pct;
         this._ack(type, true);
+        break;
+      case 'module_toggle':
+        if (Object.prototype.hasOwnProperty.call(this.modules, msg.module)) {
+          this.modules[msg.module] = !!msg.enabled;
+          this._emitMsg({ t: 'log', msg: `Demo: module '${msg.module}' ${msg.enabled ? 'enabled' : 'disabled'}.` });
+          this._ack(type, true);
+        } else {
+          this._ack(type, false, 'unknown module');
+        }
         break;
       case 'door_override':
       case 'virtual_override':

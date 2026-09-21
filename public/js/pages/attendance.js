@@ -39,7 +39,7 @@ function render() {
       el('div', { class: 'sub' }, `Source: ${tapEvt.source}`),
     ]),
   ])));
-  container.appendChild(card('Tap Feed', [feed.children.length ? feed : el('div', { class: 'empty-state' }, 'No taps yet.')], { class: 'secondary-panel', bodyClass: '' }));
+  container.appendChild(card('Tap Feed', [feed.children.length ? feed : el('div', { class: 'empty-state' }, 'No taps yet.')]));
 
   container.appendChild(el('div', { class: 'section-title' }, 'Registered Users'));
   container.appendChild(card(null, [table(

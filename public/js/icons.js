@@ -19,6 +19,7 @@ const ICONS = {
   door: '<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r="1"/>',
   bell: '<path d="M6 10a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  sliders: '<path d="M4 6h8M16 6h4M4 12h2M8 12h12M4 18h11M19 18h1"/><circle cx="12" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="15" cy="18" r="2"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
 };

@@ -40,12 +40,12 @@ firmware's `Proto::begin(...)` / `Proto::send(...)` calls exactly.
 | `t` | When | Key fields |
 |---|---|---|
 | `boot` | Once, at startup | `device`, `fw`, `modules` |
-| `telemetry` | Every 1s | `sim_time`, `sim_scale`, `uptime_s`, `heap_free`, `environment{temp_c,humidity_pct,motion,aqi}`, `security{smoke_pct,smoke_level,flame,intrusion,false_alarms}`, `smart_room{room,state,subject,section,faculty,attendance,abnormal}`, `waste{fill_pct,full}`, `metal_detector{threshold_pct,hold_active}`, `doors{main_entrance_unlocked,override_active}`, `emergency{state,active}`, `wifi{connected,rssi,ip}`, `relay_sf03`, `attendance_today` |
+| `telemetry` | Every 1s | `sim_time`, `sim_scale`, `uptime_s`, `heap_free`, `environment{temp_c,humidity_pct,motion,aqi}`, `security{smoke_pct,smoke_level,intrusion,false_alarms}`, `smart_room{room,state,subject,section,faculty,attendance,abnormal}`, `waste{fill_pct,full}`, `metal_detector{threshold_pct,hold_active}`, `doors{main_entrance_unlocked,override_active}`, `emergency{state,active}`, `wifi{connected,rssi,ip}`, `relay_sf03`, `attendance_today`, `modules{rfid,smart_room,environment,security,metal_detector,waste,network}` |
 | `rfid` | On every tap (button or web) | `uid`, `source` (`button`\|`web`), `result` (`granted`\|`granted_hold`\|`denied`\|`duplicate`\|`bypassed_emergency`), `name`, `role`, `room`, `ts` |
 | `attendance` | On a granted tap | `uid`, `name`, `role`, `room`, `ts`, `source` |
-| `flow` | On every flowchart node transition | `m` (module id: `MAIN`,`A`-`I`), `s` (node id, see `public/js/data/flowcharts.js`), `v` (branch label, optional: `YES`/`NO`/`ADMIN`/`FACULTY`), `ms` |
+| `flow` | On every flowchart node transition | `m` (module id: `MAIN`,`A`-`I`), `s` (node id), `v` (branch label, optional: `YES`/`NO`/`ADMIN`/`FACULTY`), `ms`. Still emitted by the firmware for every module (matching the flowcharts in Section 1 of the brief) even though the dashboard no longer visualizes it. |
 | `alert` | State-worthy events | `module`, `severity` (`info`\|`warning`\|`critical`), `message` (env/waste/etc.) or `phase`/`state`/`reason`/`drill` (module G) |
-| `false_alarm` | Module D false-alarm rejection | `count`, `smoke_pct`, `flame`, `reason`, `ts` |
+| `false_alarm` | Module D false-alarm rejection | `count`, `smoke_pct`, `reason`, `ts` |
 | `screening` | Metal detector scan result | `result` (`clear`\|`hold`\|`allowed`\|`denied`), `signal_pct`, `threshold_pct`, `reason`, `scans`, `alerts`, `allowed`, `denied`, `ts` |
 | `waste` | Bin level change | `bin_id`, `room`, `fill_pct`, `state`, `live`, `ts` |
 | `net_stats` | Every 1s | `scenario`, `wifi_connected`, `wifi_rssi`, `wifi_ip`, `firewall_rules[]`, `blocked_hosts[]`, `vlans[]`, `switch_segments[]` |
@@ -77,6 +77,7 @@ receives an `ack` with `cmd` echoing the type.
 | `jump_time` | `{minutes}` | Jumps the simulated clock to a given minute-of-day |
 | `display_text` | `{text}` | Shows an announcement on the OLED's building-status page |
 | `virtual_override` | `{entity,id,...}` | No firmware effect - acknowledged so the server's optimistic UI update for a purely virtual entity is confirmed |
+| `module_toggle` | `{module:"rfid"\|"smart_room"\|"environment"\|"security"\|"metal_detector"\|"waste"\|"network", enabled:boolean}` | Enables/disables that module's `loop()` call (see `firmware/src/module_flags.h`). The sim clock, indicators, door servo, and module G are never gated. |
 | `ping` | - | Replies `ack` with `detail:"pong"` |
 
 Malformed `CMD` lines (bad JSON) are logged and otherwise ignored; the

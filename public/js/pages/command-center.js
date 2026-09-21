@@ -20,7 +20,7 @@ function render() {
   }
 
   const kpis = el('div', { class: 'grid grid-kpi' }, [
-    kpiCard({ label: 'Smoke Level', value: SMOKE_LABELS[t.security?.smoke_level ?? 0], sub: `${(t.security?.smoke_pct ?? 0).toFixed(0)}% - flame ${t.security?.flame ? 'DETECTED' : 'clear'}` }),
+    kpiCard({ label: 'Smoke Level', value: SMOKE_LABELS[t.security?.smoke_level ?? 0], sub: `${(t.security?.smoke_pct ?? 0).toFixed(0)}%` }),
     kpiCard({ label: 'SF-03 Temp / Humidity', value: `${(t.environment?.temp_c ?? 0).toFixed(1)}C / ${(t.environment?.humidity_pct ?? 0).toFixed(0)}%`, sub: t.environment?.motion ? 'Motion present' : 'No motion' }),
     kpiCard({ label: 'Attendance Today', value: t.attendance_today ?? 0 }),
     kpiCard({ label: 'Main Door', value: t.doors?.main_entrance_unlocked ? 'UNLOCKED' : 'LOCKED' }),

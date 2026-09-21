@@ -10,7 +10,7 @@ export const ASSET_INVENTORY = [
   { component: 'Digital displays', designed: '3-4', represented: '1 SSD1306 OLED (Main Lobby, LIVE) - others SIMULATED on dashboard' },
   { component: 'Central controller', designed: '1-2', represented: '1 Node.js Central Smart Learning System (this server)' },
   { component: 'Network ESP32 modules', designed: '2-3', represented: '1 ESP32 running all modules concurrently (per assignment: single microcontroller)' },
-  { component: 'Fire/safety set + indicators', designed: '3-4', represented: 'MQ-2 + flame fallback switch (GF-06, LIVE) + 3 LEDs + buzzer (LIVE)' },
+  { component: 'Fire/safety set + indicators', designed: '3-4', represented: 'MQ-2 smoke sensor (GF-06, LIVE) + 3 LEDs + buzzer (LIVE)' },
 ];
 
 export const PIN_MAP = [
@@ -18,7 +18,6 @@ export const PIN_MAP = [
   { pin: 'GPIO15', device: 'DHT22', role: 'Temperature/Humidity - Smart Classroom 1 (SF-03)', live: true },
   { pin: 'GPIO13', device: 'PIR HC-SR501', role: 'Motion/presence - SF-03 / CCTV trigger', live: true },
   { pin: 'GPIO34 (ADC1)', device: 'MQ-2 gas/smoke sensor (AOUT)', role: 'Smoke level - Cafeteria (GF-06)', live: true },
-  { pin: 'GPIO35', device: 'Flame sensor fallback (slide switch, no native Wokwi part)', role: 'Flame detect - Cafeteria (GF-06)', live: true },
   { pin: 'GPIO5 / GPIO18', device: 'HC-SR04 (TRIG/ECHO)', role: 'Waste bin fill level - Main Lobby', live: true },
   { pin: 'GPIO33 (ADC1)', device: 'Potentiometer', role: 'Metal detector signal strength - Main Entrance', live: true },
   { pin: 'GPIO14', device: 'Pushbutton (SCREEN)', role: 'Metal detector: person/object presented', live: true },

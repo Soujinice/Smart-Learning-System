@@ -16,6 +16,7 @@
 #include "protocol.h"
 #include "simclock.h"
 #include "indicators.h"
+#include "module_flags.h"
 
 #include "module_metaldetector.h"
 #include "module_rfid.h"
@@ -126,6 +127,8 @@ void dispatchCommand(const String &type, JsonObjectConst payload) {
     // the server, which owns their simulated state directly. The firmware
     // just acknowledges so the server's optimistic UI update is confirmed.
     Proto::ack(type, true);
+  } else if (type == "module_toggle") {
+    handleModuleToggle(payload);
   } else if (type == "sync_users" || type == "rfid_tap") {
     rfidModule.handleCommand(type, payload);
   } else if (type == "sync_schedule" || type == "class_override") {
@@ -197,7 +200,6 @@ void sendTelemetry() {
   JsonObject fire = doc["security"].to<JsonObject>();
   fire["smoke_pct"] = security.smokePct();
   fire["smoke_level"] = (int)security.currentLevel();
-  fire["flame"] = security.flameActive();
   fire["intrusion"] = security.intrusionActive();
   fire["false_alarms"] = security.falseAlarmCount();
 
@@ -235,6 +237,15 @@ void sendTelemetry() {
   doc["attendance_today"] = attendanceToday;
   if (announcementText.length()) doc["announcement"] = announcementText;
 
+  JsonObject mods = doc["modules"].to<JsonObject>();
+  mods["rfid"] = moduleFlags.rfid;
+  mods["smart_room"] = moduleFlags.smartRoom;
+  mods["environment"] = moduleFlags.environment;
+  mods["security"] = moduleFlags.security;
+  mods["metal_detector"] = moduleFlags.metalDetector;
+  mods["waste"] = moduleFlags.waste;
+  mods["network"] = moduleFlags.network;
+
   Proto::send(doc);
 }
 
@@ -244,7 +255,6 @@ void refreshDisplay() {
   snap.emergencyActive = emergencyModule.isOverrideActive();
   snap.emergencyState = emergencyModule.stateName();
   snap.smokePct = security.smokePct();
-  snap.flame = security.flameActive();
   snap.smokeLevel = (uint8_t)security.currentLevel();
   snap.roomTempC = smartRoom.temperature();
   snap.roomHumPct = smartRoom.humidity();
@@ -258,6 +268,11 @@ void refreshDisplay() {
   snap.ip = network.ip();
   snap.wastePct = waste.fillPercent();
   snap.wasteFull = waste.isFull();
+  snap.smartRoomEnabled = moduleFlags.smartRoom;
+  snap.rfidEnabled = moduleFlags.rfid;
+  snap.securityEnabled = moduleFlags.security;
+  snap.networkEnabled = moduleFlags.network;
+  snap.wasteEnabled = moduleFlags.waste;
   display.loop(snap);
 }
 
@@ -317,14 +332,14 @@ void loop() {
   indicators.loop();
   doorController.loop();
 
-  rfidModule.loop();
-  smartRoom.loop();
-  environment.loop();
-  security.loop();
-  metalDetector.loop();
-  waste.loop();
-  network.loop();
-  emergencyModule.loop();
+  if (moduleFlags.rfid) rfidModule.loop();
+  if (moduleFlags.smartRoom) smartRoom.loop();
+  if (moduleFlags.environment) environment.loop();
+  if (moduleFlags.security) security.loop();
+  if (moduleFlags.metalDetector) metalDetector.loop();
+  if (moduleFlags.waste) waste.loop();
+  if (moduleFlags.network) network.loop();
+  emergencyModule.loop(); // core safety state machine - never gated
 
   refreshDisplay();
 

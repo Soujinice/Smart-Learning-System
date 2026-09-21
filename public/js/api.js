@@ -45,6 +45,9 @@ export const api = {
   thresholds: () => request('GET', '/api/thresholds'),
   saveThresholds: (patch) => request('POST', '/api/thresholds', patch),
 
+  modules: () => request('GET', '/api/modules'),
+  toggleModule: (name, enabled) => request('POST', `/api/modules/${name}/toggle`, { enabled }),
+
   events: () => request('GET', '/api/events'),
   falseAlarms: () => request('GET', '/api/false-alarms'),
   screenings: () => request('GET', '/api/screenings'),

@@ -1,11 +1,10 @@
 import { api } from '../api.js';
 import { state, on as onStoreChange } from '../store.js';
-import { el, card, table, liveBadge, toast, clearNode, loadScript } from '../ui.js';
+import { el, card, table, liveBadge, clearNode, loadScript } from '../ui.js';
 
 let container = null;
 let unsub = null;
 let thresholds = null;
-let user = null;
 let chart = null;
 let chartCanvas = null;
 const history = { labels: [], temp: [], hum: [] };
@@ -84,9 +83,6 @@ function render() {
     ensureChartLib().then(() => { if (container) mountChart(); });
   }
 
-  container.appendChild(el('div', { class: 'section-title' }, 'Thresholds'));
-  container.appendChild(card(null, [buildThresholdForm()]));
-
   container.appendChild(el('div', { class: 'section-title' }, 'Zones'));
   const zoneRows = [
     { room: 'SF-03', name: 'Smart Classroom 1', temp: t?.environment?.temp_c, hum: t?.environment?.humidity_pct, state: t?.smart_room?.state, live: true },
@@ -105,36 +101,6 @@ function render() {
   )]));
 }
 
-function buildThresholdForm() {
-  if (!thresholds) return el('div', { class: 'empty-state' }, 'Loading thresholds...');
-  if (user?.role !== 'admin') {
-    return el('div', {}, [
-      row('Temperature', `${thresholds.env_temp_min} - ${thresholds.env_temp_max} C`),
-      row('Humidity', `${thresholds.env_hum_min} - ${thresholds.env_hum_max} %`),
-    ]);
-  }
-  const tMin = el('input', { type: 'number', value: thresholds.env_temp_min, style: 'width:70px;' });
-  const tMax = el('input', { type: 'number', value: thresholds.env_temp_max, style: 'width:70px;' });
-  const hMin = el('input', { type: 'number', value: thresholds.env_hum_min, style: 'width:70px;' });
-  const hMax = el('input', { type: 'number', value: thresholds.env_hum_max, style: 'width:70px;' });
-  return el('div', { class: 'form-inline' }, [
-    el('div', { class: 'form-row' }, [el('label', {}, 'Temp min (C)'), tMin]),
-    el('div', { class: 'form-row' }, [el('label', {}, 'Temp max (C)'), tMax]),
-    el('div', { class: 'form-row' }, [el('label', {}, 'Humidity min (%)'), hMin]),
-    el('div', { class: 'form-row' }, [el('label', {}, 'Humidity max (%)'), hMax]),
-    el('button', {
-      class: 'pill-btn primary', onclick: async () => {
-        thresholds = await (await api.saveThresholds({
-          env_temp_min: Number(tMin.value), env_temp_max: Number(tMax.value),
-          env_hum_min: Number(hMin.value), env_hum_max: Number(hMax.value),
-        })).thresholds;
-        toast('Thresholds synced to ESP32', 'success');
-        render();
-      },
-    }, 'Save'),
-  ]);
-}
-
 function kpi(label, value, sub) {
   return el('div', { class: 'card kpi' }, [
     el('span', { class: 'label' }, label),
@@ -142,17 +108,9 @@ function kpi(label, value, sub) {
     el('span', { class: 'sub' }, sub),
   ]);
 }
-function row(label, value) {
-  return el('div', { style: 'display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;' }, [
-    el('span', { style: 'color:var(--text-muted);' }, label),
-    el('span', { style: 'font-weight:600;' }, String(value)),
-  ]);
-}
-
 export default {
-  mount(rootEl, ctx) {
+  mount(rootEl) {
     container = rootEl;
-    user = ctx.user;
     api.thresholds().then((r) => { thresholds = r.thresholds; render(); }).catch(() => render());
     unsub = onStoreChange(() => { sample(); render(); });
     render();

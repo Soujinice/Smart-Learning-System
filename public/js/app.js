@@ -12,6 +12,7 @@ const PAGES = [
   { id: 'network', label: 'Network', icon: 'network', path: './pages/network.js' },
   { id: 'waste', label: 'Waste', icon: 'waste', path: './pages/waste.js' },
   { id: 'admin-portal', label: 'Admin / Faculty', icon: 'admin', path: './pages/admin-portal.js' },
+  { id: 'controls', label: 'Controls', icon: 'sliders', path: './pages/controls.js' },
   { id: 'diagnostics', label: 'Diagnostics', icon: 'settings', path: './pages/diagnostics.js' },
 ];
 
@@ -85,7 +86,6 @@ function renderShell() {
 
   const clockPill = el('span', { class: 'clock-pill', id: 'clock-pill' }, '--:--');
   const connPill = el('span', { class: 'conn-pill', id: 'conn-pill' }, 'Connecting...');
-  const presentBtn = el('button', { class: 'btn-icon', id: 'presentation-toggle' }, 'Presentation Mode');
   const logoutBtn = el('button', {
     class: 'btn-icon', onclick: async () => { await api.logout(); location.reload(); },
   }, ['Log out']);
@@ -98,7 +98,6 @@ function renderShell() {
       clockPill,
       connPill,
       el('span', { class: 'user-pill' }, `${currentUser.name} - ${currentUser.role}`),
-      presentBtn,
       logoutBtn,
     ]),
   ]);
@@ -106,12 +105,6 @@ function renderShell() {
   const pageRoot = el('main', { class: 'page', id: 'page-root' });
 
   root.appendChild(el('div', { class: 'shell' }, [sidebar, topbar, pageRoot]));
-
-  if (localStorage.getItem('slc_presentation') === '1') document.body.classList.add('presentation');
-  presentBtn.addEventListener('click', () => {
-    document.body.classList.toggle('presentation');
-    localStorage.setItem('slc_presentation', document.body.classList.contains('presentation') ? '1' : '0');
-  });
 
   onStoreChange(() => {
     clockPill.textContent = state.telemetry?.sim_time ? `Sim time ${state.telemetry.sim_time}` : 'Sim time --:--';
