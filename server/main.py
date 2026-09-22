@@ -502,8 +502,9 @@ async def api_emergency(action: str, request: Request):
     elif action == "test":
         await send_command("emergency_test")
     elif action == "clear":
-        smoke_level = (last_telemetry or {}).get("security", {}).get("smoke_level", 0)
-        await send_command("emergency_clear", {"sensors_normal": smoke_level < 2})
+        # Admin call, like confirm/dismiss - not gated on the sensor
+        # reading also being back to normal (see module_emergency.h).
+        await send_command("emergency_clear")
     else:
         return JSONResponse({"ok": False, "error": "unknown action"}, status_code=400)
     return {"ok": True}

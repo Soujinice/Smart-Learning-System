@@ -77,15 +77,13 @@ public:
     activeReason = "";
   }
 
-  // Admin: ACTIVE -> CLEARED, only if sensors are also back to normal.
-  void requestClear(bool sensorsNormal) {
+  // Admin: ACTIVE -> CLEARED. Like Confirm/Dismiss, this is the admin's
+  // call to make, not gated on the sensor reading also being back to
+  // normal - a security officer clearing a panel isn't blocked by the
+  // system second-guessing them.
+  void requestClear() {
     if (state != ACTIVE) return;
-    Proto::flow("G", "G_CLEARED", sensorsNormal ? "YES" : "NO");
-    if (!sensorsNormal) {
-      Proto::flow("G", "G_CONTINUE");
-      sendState("continue");
-      return;
-    }
+    Proto::flow("G", "G_CLEARED", "YES");
     state = CLEARED;
   }
 
@@ -97,7 +95,7 @@ public:
       dismiss();
       Proto::ack(type, true);
     } else if (type == "emergency_clear") {
-      requestClear(payload["sensors_normal"].as<bool>());
+      requestClear();
       Proto::ack(type, true);
     } else if (type == "emergency_test") {
       triggerDrill();

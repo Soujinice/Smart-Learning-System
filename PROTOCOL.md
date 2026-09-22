@@ -44,7 +44,7 @@ firmware's `Proto::begin(...)` / `Proto::send(...)` calls exactly.
 | `rfid` | On every tap (reader or web) | `uid`, `source` (`reader`\|`web`), `result` (`granted`\|`granted_hold`\|`denied`\|`duplicate`\|`bypassed_emergency`), `name`, `role`, `room`, `ts` |
 | `attendance` | On a granted tap | `uid`, `name`, `role`, `room`, `ts`, `source` |
 | `flow` | On every flowchart node transition | `m` (module id: `MAIN`,`A`-`I`), `s` (node id), `v` (branch label, optional: `YES`/`NO`/`ADMIN`/`FACULTY`), `ms`. Still emitted by the firmware for every module (matching the flowcharts in Section 1 of the brief) even though the dashboard no longer visualizes it. |
-| `alert` | State-worthy events | `module`, `severity` (`info`\|`warning`\|`critical`), `message` (env/waste/etc.) or `phase` (`pending`\|`dismissed`\|`continue`\|`active`\|`cleared`) / `state`/`reason`/`drill` (module G) |
+| `alert` | State-worthy events | `module`, `severity` (`info`\|`warning`\|`critical`), `message` (env/waste/etc.) or `phase` (`pending`\|`dismissed`\|`active`\|`cleared`) / `state`/`reason`/`drill` (module G) |
 | `false_alarm` | Module D false-alarm rejection | `count`, `smoke_pct`, `reason`, `ts` |
 | `screening` | Metal detector scan result | `result` (`clear`\|`hold`\|`allowed`\|`denied`), `signal_pct`, `threshold_pct`, `reason`, `scans`, `alerts`, `allowed`, `denied`, `ts` |
 | `waste` | Bin level change | `bin_id`, `room`, `fill_pct`, `state`, `live`, `ts` |
@@ -69,7 +69,7 @@ receives an `ack` with `cmd` echoing the type.
 | `waste_collect` | `{admin_override:boolean}` | Resets the physical bin (module H) |
 | `emergency_confirm` | - | Admin confirms a sensor-detected fire/smoke condition: PENDING -> ACTIVE (unlocks doors, sounds alarm) |
 | `emergency_dismiss` | - | Admin dismisses a sensor-detected condition as a false alarm: PENDING -> IDLE (doors stay locked, no alarm) |
-| `emergency_clear` | `{sensors_normal:boolean}` | ACTIVE -> CLEARED -> IDLE (doors return to locked); no effect if not ACTIVE |
+| `emergency_clear` | - | Admin call (like confirm/dismiss, not gated on sensor readings): ACTIVE -> CLEARED -> IDLE (doors return to locked); no effect if not ACTIVE |
 | `emergency_test` | - | Human-initiated drill: IDLE -> ACTIVE directly (dashboard test button, treated as pre-confirmed) |
 | `door_override` | `{door_id,locked}` | Manually sets the main entrance door (only `door_id:"main_entrance"` has physical effect; the emergency override always wins) |
 | `net_scenario` | `{scenario:"normal"\|"port_scan"\|"brute_force"\|"dos_flood"\|"blocked_port"}` | Triggers a one-shot synthetic traffic scenario |
