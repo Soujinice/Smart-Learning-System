@@ -50,7 +50,9 @@ smart-learning-center/
   confirmation.
 - **CCTV is the presenter's own webcam**, shown via the browser's
   `getUserMedia()` API on the Security & Fire page - not a Wokwi part, since
-  Wokwi has no camera peripheral. Allow camera access when prompted.
+  Wokwi has no camera peripheral. It starts **off**; use the **Turn On
+  Camera** button on that card and allow camera access when prompted (and
+  **Turn Off Camera** to release it again).
 - **The interactive smart board is a website drawing demo.** Wokwi has no
   touchscreen/whiteboard part, so the Smart Room page includes a simple
   canvas you can draw/clear on to represent the board's live content; the
@@ -129,6 +131,15 @@ done. A disabled module's `loop()` stops running on the ESP32 entirely (see
 `firmware/src/module_flags.h`), so the simulation stays smooth and focused
 on whatever you're actually testing. Toggling takes effect immediately, no
 reflash needed.
+
+The **Environment** module now drives the SF-03 DHT22 (temperature/
+humidity) and PIR reading shown on the Environment page, sampling
+continuously as soon as you turn it on - not only while a class happens to
+be in session. The **Smart Room** module is separate: it only drives the
+class-schedule state machine (relay, attendance window, SF-03 state).
+Clicking **Start Class Now** on the Smart Room page turns both of those
+modules on for you, so it never silently does nothing even if they were
+left off.
 
 ### Demo accounts (simulation only - do not reuse these credentials anywhere real)
 

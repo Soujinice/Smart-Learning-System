@@ -5,20 +5,17 @@
   "parts": [
     { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 200, "left": 400, "attrs": {} },
 
-    { "type": "wokwi-lcd2004", "id": "lcd_lobby_display", "top": -80, "left": 0, "attrs": { "pins": "i2c" } },
+    { "type": "wokwi-lcd2004", "id": "lcd_lobby_display", "top": -320, "left": -40, "attrs": { "pins": "i2c" } },
 
-    { "type": "board-mfrc522", "id": "rfid_main_entrance", "top": -60, "left": 220, "attrs": {} },
+    { "type": "board-mfrc522", "id": "rfid_main_entrance", "top": -60, "left": 260, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht22_sf03", "top": -60, "left": 560, "attrs": {} },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir_sf03", "top": -60, "left": 860, "attrs": {} },
+    { "type": "wokwi-gas-sensor", "id": "mq2_gf06", "top": -60, "left": 1160, "attrs": { "value": "0" } },
 
-    { "type": "wokwi-dht22", "id": "dht22_sf03", "top": -60, "left": 440, "attrs": {} },
-    { "type": "wokwi-pir-motion-sensor", "id": "pir_sf03", "top": -60, "left": 600, "attrs": {} },
-
-    { "type": "wokwi-gas-sensor", "id": "mq2_gf06", "top": -60, "left": 780, "attrs": { "value": "0" } },
-
-    { "type": "wokwi-hc-sr04", "id": "hcsr04_waste_lobby", "top": 60, "left": 1000, "attrs": {} },
-    { "type": "wokwi-potentiometer", "id": "pot_metal_detector", "top": 220, "left": 1000, "attrs": { "value": "0" } },
-
-    { "type": "wokwi-pushbutton", "id": "btn_screen", "top": 360, "left": 1000, "attrs": { "color": "blue" } },
-    { "type": "wokwi-pushbutton", "id": "btn_manual_pull_station", "top": 440, "left": 1000, "attrs": { "color": "red" } },
+    { "type": "wokwi-pushbutton", "id": "btn_manual_pull_station", "top": 180, "left": 260, "attrs": { "color": "red" } },
+    { "type": "wokwi-pushbutton", "id": "btn_screen", "top": 180, "left": 560, "attrs": { "color": "blue" } },
+    { "type": "wokwi-potentiometer", "id": "pot_metal_detector", "top": 180, "left": 860, "attrs": { "value": "0" } },
+    { "type": "wokwi-hc-sr04", "id": "hcsr04_waste_lobby", "top": 180, "left": 1160, "attrs": {} },
 
     { "type": "wokwi-led", "id": "led_green_normal", "top": 460, "left": -60, "attrs": { "color": "green" } },
     { "type": "wokwi-resistor", "id": "r_led_green", "top": 460, "left": -140, "attrs": { "value": "330" } },

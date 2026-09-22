@@ -13,6 +13,7 @@
 #include "config.h"
 #include "protocol.h"
 #include "simclock.h"
+#include "module_flags.h"
 
 struct ScheduleEntry {
   String room;
@@ -80,9 +81,26 @@ public:
   void requestStart() { manualStart = true; }
   void requestEnd() { manualEnd = true; }
 
-  void loop() {
+  // Physical DHT22/PIR sampling - called from main.cpp whenever the
+  // *Environment* module is enabled, independent of whether the Smart Room
+  // module's class-schedule state machine (below) is running, so the
+  // Environment dashboard page shows live SF-03 readings the moment you
+  // toggle it on, not only while a class happens to be in session. Lives
+  // here (not in module_environment.h) because it owns the DHT22 hardware -
+  // one-wire-style sensors can't safely be polled from two places.
+  void pollSensors() {
     unsigned long now = millis();
+    if (now - lastDhtRead >= DHT_INTERVAL_MS) {
+      lastDhtRead = now;
+      readAndEvaluate();
+    }
+    bool motion = digitalRead(PIN_PIR) == HIGH;
+    if (motion != lastMotion) {
+      lastMotion = motion;
+    }
+  }
 
+  void loop() {
     switch (state) {
       case STANDBY: {
         Proto::flow("B", "B_START");
@@ -108,15 +126,6 @@ public:
       }
 
       case IN_SESSION: {
-        if (now - lastDhtRead >= DHT_INTERVAL_MS) {
-          lastDhtRead = now;
-          readAndEvaluate();
-        }
-        bool motion = digitalRead(PIN_PIR) == HIGH;
-        if (motion != lastMotion) {
-          lastMotion = motion;
-        }
-
         bool endSignal = manualEnd || (activeEntryIdx >= 0 && simClock.minutesOfDayValue() >= schedule[activeEntryIdx].endMin);
         if (activeEntryIdx < 0) endSignal = manualEnd; // manually-started class never auto-ends
 
@@ -164,8 +173,17 @@ public:
       Proto::ack(type, true);
     } else if (type == "class_override") {
       String action = payload["action"].as<String>();
-      if (action == "start") requestStart();
-      else if (action == "end") requestEnd();
+      if (action == "start") {
+        // An explicit "start class" from the dashboard should always
+        // visibly work, even if the Smart Room/Environment modules were
+        // left off - enable both so the class-schedule state machine runs
+        // and SF-03 sensor readings start updating immediately.
+        moduleFlags.smartRoom = true;
+        moduleFlags.environment = true;
+        requestStart();
+      } else if (action == "end") {
+        requestEnd();
+      }
       Proto::ack(type, true);
     } else if (type == "set_thresholds") {
       if (payload["room_temp_min"].is<float>()) tempMin = payload["room_temp_min"].as<float>();

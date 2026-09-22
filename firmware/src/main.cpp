@@ -336,7 +336,7 @@ void loop() {
 
   if (moduleFlags.rfid) rfidModule.loop();
   if (moduleFlags.smartRoom) smartRoom.loop();
-  if (moduleFlags.environment) environment.loop();
+  if (moduleFlags.environment) { smartRoom.pollSensors(); environment.loop(); }
   if (moduleFlags.security) security.loop();
   if (moduleFlags.metalDetector) metalDetector.loop();
   if (moduleFlags.waste) waste.loop();

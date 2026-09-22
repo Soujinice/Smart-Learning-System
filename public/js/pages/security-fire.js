@@ -9,6 +9,7 @@ let thresholds = null;
 let webcamStream = null;
 let webcamVideoEl = null;
 let webcamError = null;
+let webcamOn = false;
 
 const LEVEL_LABELS = ['Normal', 'Watch', 'Warning', 'Danger', 'CONFIRMED EMERGENCY'];
 const LEVEL_COLORS = ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--amber)', 'var(--red-primary)'];
@@ -85,7 +86,7 @@ function render() {
 
   // The <video> element must exist in the DOM before we can attach a
   // stream to it; render() just rebuilt the page, so reattach now.
-  attachWebcamStream();
+  if (webcamOn) attachWebcamStream();
 }
 
 function pendingCard(emergency) {
@@ -117,14 +118,38 @@ async function act(action) {
 }
 
 function buildCctvCard(t) {
-  webcamVideoEl = el('video', { autoplay: 'autoplay', playsinline: 'playsinline', muted: 'muted', style: 'width:100%;border-radius:6px;background:#12181f;display:block;max-height:220px;object-fit:cover;' });
-  const status = webcamError
-    ? el('div', { class: 'empty-state' }, webcamError)
-    : el('div', {}, [webcamVideoEl]);
+  let status;
+  if (!webcamOn) {
+    status = el('div', { class: 'empty-state' }, 'Camera is off.');
+  } else if (webcamError) {
+    status = el('div', { class: 'empty-state' }, webcamError);
+  } else {
+    webcamVideoEl = el('video', { autoplay: 'autoplay', playsinline: 'playsinline', muted: 'muted', style: 'width:100%;border-radius:6px;background:#12181f;display:block;max-height:220px;object-fit:cover;' });
+    status = el('div', {}, [webcamVideoEl]);
+  }
+
+  const toggleBtn = el('button', {
+    class: `pill-btn ${webcamOn ? 'danger' : 'primary'}`,
+    onclick: () => toggleWebcam(),
+  }, webcamOn ? 'Turn Off Camera' : 'Turn On Camera');
+
   return card('CCTV - SF-03', [
     status,
+    el('div', { class: 'form-inline', style: 'margin-top:10px;' }, [toggleBtn]),
     row('Motion (PIR)', t?.environment?.motion ? 'PRESENT' : 'none'),
-  ].filter(Boolean), { titleRight: liveBadge(!webcamError) });
+  ].filter(Boolean), { titleRight: liveBadge(webcamOn && !webcamError) });
+}
+
+function toggleWebcam() {
+  if (webcamOn) {
+    webcamOn = false;
+    stopWebcam();
+    render();
+  } else {
+    webcamOn = true;
+    webcamError = null;
+    render(); // mounts the <video> element, then attachWebcamStream() runs
+  }
 }
 
 function attachWebcamStream() {
@@ -183,6 +208,7 @@ export default {
     if (unsub) unsub();
     stopWebcam();
     webcamVideoEl = null;
+    webcamOn = false;
     container = null;
   },
 };

@@ -36,6 +36,7 @@ class DemoDevice(AsyncEmitter):
             "doors_unlocked": 0, "override_active": False,
             "emergency_state": "IDLE",
             "smart_room_state": "STANDBY",
+            "smart_room_manual": False,
             "attendance_today": 0,
             "wifi_connected": True, "rssi": -58, "ip": "10.0.0.42",
         }
@@ -112,7 +113,16 @@ class DemoDevice(AsyncEmitter):
         if m["smart_room"]:
             active = next((e for e in self.schedule if self.sim_minutes >= e["start"] and self.sim_minutes < e["end"]), None)
             if s["emergency_state"] == "IDLE":
-                s["smart_room_state"] = "IN_SESSION" if active else "STANDBY"
+                natural_state = "IN_SESSION" if active else "STANDBY"
+                if s["smart_room_manual"]:
+                    # A class_override is in effect; let it hold until the
+                    # schedule's own state agrees, then hand control back -
+                    # otherwise this tick would stomp the override a second
+                    # after class_override sets it.
+                    if s["smart_room_state"] == natural_state:
+                        s["smart_room_manual"] = False
+                else:
+                    s["smart_room_state"] = natural_state
 
         # Keep dashboards showing live flow activity, same as the firmware -
         # but only for modules that are actually enabled.
@@ -182,10 +192,19 @@ class DemoDevice(AsyncEmitter):
             await self._ack(type_, True)
         elif type_ == "class_override":
             if msg.get("action") == "start":
+                # Mirrors main.cpp: an explicit "start class" from the
+                # dashboard should always visibly work and keep reporting
+                # the module as on, even if it was toggled off. The manual
+                # latch stops the next tick's schedule check (above) from
+                # immediately overwriting this override.
+                self.modules["smart_room"] = True
+                self.modules["environment"] = True
+                s["smart_room_manual"] = True
                 s["smart_room_state"] = "IN_SESSION"
                 for node in ("B_ACTIVATE", "B_DISPLAY_STATUS", "B_IN_SESSION"):
                     await self._flow("B", node)
             else:
+                s["smart_room_manual"] = True
                 s["smart_room_state"] = "STANDBY"
                 for node in ("B_SAVE_DATA", "B_SEND_CENTRAL", "B_STANDBY_OFF", "B_STANDBY_STATUS", "B_END"):
                     await self._flow("B", node)
