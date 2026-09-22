@@ -10,14 +10,19 @@
 #include <ArduinoJson.h>
 #include "protocol.h"
 
+// Only RFID starts enabled: that is almost always the first thing tested on
+// Wokwi, and starting with every module live means several unrelated
+// sensors compete for the serial line/simulator CPU before you have wired
+// or touched most of them. Turn a module on from the Controls page right
+// before you test it.
 struct ModuleFlags {
   bool rfid = true;
-  bool smartRoom = true;
-  bool environment = true;
-  bool security = true;
-  bool metalDetector = true;
-  bool waste = true;
-  bool network = true;
+  bool smartRoom = false;
+  bool environment = false;
+  bool security = false;
+  bool metalDetector = false;
+  bool waste = false;
+  bool network = false;
 };
 
 ModuleFlags moduleFlags;

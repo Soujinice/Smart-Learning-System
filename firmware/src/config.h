@@ -95,3 +95,12 @@ namespace Defaults {
   constexpr uint16_t BUILDING_OPEN_MIN  = 6 * 60;   // 06:00
   constexpr uint16_t BUILDING_CLOSE_MIN = 21 * 60;  // 21:00
 }
+
+// Shared by module D (security) and module C (environment/AQI) so both read
+// the gas sensor the same way. diagram.json pins the part's own simulated
+// slider to "value": "0" at boot (same as the metal-detector potentiometer),
+// so a direct linear 0-100% mapping already starts quiet and stays fully
+// responsive across the whole slider range as you raise it in Wokwi.
+inline float mq2RawToPct(int raw) {
+  return (raw / 4095.0f) * 100.0f;
+}

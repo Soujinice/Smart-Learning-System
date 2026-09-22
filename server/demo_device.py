@@ -40,9 +40,12 @@ class DemoDevice(AsyncEmitter):
             "wifi_connected": True, "rssi": -58, "ip": "10.0.0.42",
         }
 
+        # Only RFID starts enabled, matching the firmware's module_flags.h
+        # defaults - the rest wait for an explicit toggle from the Controls
+        # page so demo mode isn't noisy from the moment it connects either.
         self.modules = {
-            "rfid": True, "smart_room": True, "environment": True, "security": True,
-            "metal_detector": True, "waste": True, "network": True,
+            "rfid": True, "smart_room": False, "environment": False, "security": False,
+            "metal_detector": False, "waste": False, "network": False,
         }
 
     def start(self):

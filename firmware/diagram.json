@@ -12,7 +12,7 @@
     { "type": "wokwi-dht22", "id": "dht22_sf03", "top": -60, "left": 440, "attrs": {} },
     { "type": "wokwi-pir-motion-sensor", "id": "pir_sf03", "top": -60, "left": 600, "attrs": {} },
 
-    { "type": "wokwi-mq2-gas-sensor", "id": "mq2_gf06", "top": -60, "left": 780, "attrs": {} },
+    { "type": "wokwi-gas-sensor", "id": "mq2_gf06", "top": -60, "left": 780, "attrs": { "value": "0" } },
 
     { "type": "wokwi-hc-sr04", "id": "hcsr04_waste_lobby", "top": 60, "left": 1000, "attrs": {} },
     { "type": "wokwi-potentiometer", "id": "pot_metal_detector", "top": 220, "left": 1000, "attrs": { "value": "0" } },

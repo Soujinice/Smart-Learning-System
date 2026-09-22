@@ -27,8 +27,7 @@ public:
 
     float temp = smartRoom.temperature();
     float hum = smartRoom.humidity();
-    int smokeRaw = analogRead(PIN_MQ2_AOUT);
-    float smokePct = (smokeRaw / 4095.0f) * 100.0f;
+    float smokePct = mq2RawToPct(analogRead(PIN_MQ2_AOUT));
     aqi = smokePct * 5.0f;
     if (aqi > 500) aqi = 500;
 

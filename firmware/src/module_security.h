@@ -105,8 +105,7 @@ private:
   }
 
   float readSmokeAveraged() {
-    int raw = analogRead(PIN_MQ2_AOUT);
-    float pct = (raw / 4095.0f) * 100.0f;
+    float pct = mq2RawToPct(analogRead(PIN_MQ2_AOUT));
     smokeBuf[smokeBufIdx] = pct;
     smokeBufIdx = (smokeBufIdx + 1) % 5;
     float sum = 0;
