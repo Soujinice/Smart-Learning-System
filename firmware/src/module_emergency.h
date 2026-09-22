@@ -24,6 +24,11 @@ public:
   enum State { IDLE, PENDING, ACTIVE, CLEARED };
 
   std::function<void(bool unlockAll)> setAllDoors;
+  // Wired to module D: resets its escalation state (confirm counters,
+  // sustained-danger timer) whenever this module returns to IDLE, so a
+  // sensor reading that's still elevated at the moment of Dismiss/Clear
+  // can't immediately re-trigger a new PENDING a tick later.
+  std::function<void()> onResolved;
 
   void begin() {}
 
@@ -72,9 +77,10 @@ public:
     if (state != PENDING) return;
     Proto::flow("G", "G_LOG_CANCEL");
     Proto::flow("G", "G_NORMAL_STATUS");
-    sendState("dismissed");
     state = IDLE;
+    sendState("dismissed");
     activeReason = "";
+    if (onResolved) onResolved();
   }
 
   // Admin: ACTIVE -> CLEARED. Like Confirm/Dismiss, this is the admin's
@@ -143,6 +149,7 @@ private:
     state = IDLE;
     activeReason = "";
     isDrill = false;
+    if (onResolved) onResolved();
   }
 
   void sendState(const String &phase) {

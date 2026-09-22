@@ -262,6 +262,7 @@ void refreshDisplay() {
   snap.roomHumPct = smartRoom.humidity();
   snap.roomMotion = smartRoom.motionPresent();
   snap.smartRoomState = smartRoom.stateName();
+  snap.roomAttendance = smartRoom.attendanceTotal();
   snap.attendanceToday = attendanceToday;
   snap.doorsUnlocked = doorController.isUnlocked() ? 1 : 0;
   snap.doorsTotal = 1;
@@ -270,7 +271,6 @@ void refreshDisplay() {
   snap.ip = network.ip();
   snap.wastePct = waste.fillPercent();
   snap.wasteFull = waste.isFull();
-  snap.smartRoomEnabled = moduleFlags.smartRoom;
   snap.rfidEnabled = moduleFlags.rfid;
   snap.securityEnabled = moduleFlags.security;
   snap.networkEnabled = moduleFlags.network;
@@ -318,6 +318,7 @@ void setup() {
   security.onManualPull = []() { emergencyModule.triggerManualPull(); };
 
   emergencyModule.setAllDoors = [](bool unlock) { doorController.setOverride(unlock); };
+  emergencyModule.onResolved = []() { security.resetEscalation(); };
 
   JsonDocument boot = Proto::begin("boot");
   boot["device"] = DEVICE_ID;

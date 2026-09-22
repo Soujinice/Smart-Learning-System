@@ -5,7 +5,8 @@
   "parts": [
     { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 200, "left": 400, "attrs": {} },
 
-    { "type": "wokwi-lcd2004", "id": "lcd_lobby_display", "top": -320, "left": -40, "attrs": { "pins": "i2c" } },
+    { "type": "wokwi-lcd2004", "id": "lcd_lobby_display", "top": -320, "left": -40, "attrs": { "pins": "i2c", "i2cAddress": "0x27" } },
+    { "type": "wokwi-lcd2004", "id": "lcd_sf03_display", "top": -320, "left": 340, "attrs": { "pins": "i2c", "i2cAddress": "0x28" } },
 
     { "type": "board-mfrc522", "id": "rfid_main_entrance", "top": -60, "left": 260, "attrs": {} },
     { "type": "wokwi-dht22", "id": "dht22_sf03", "top": -60, "left": 560, "attrs": {} },
@@ -41,6 +42,11 @@
     ["esp:D22", "lcd_lobby_display:SCL", "yellow", []],
     ["lcd_lobby_display:VCC", "esp:5V", "red", []],
     ["lcd_lobby_display:GND", "esp:GND.1", "black", []],
+
+    ["esp:D21", "lcd_sf03_display:SDA", "green", []],
+    ["esp:D22", "lcd_sf03_display:SCL", "yellow", []],
+    ["lcd_sf03_display:VCC", "esp:5V", "red", []],
+    ["lcd_sf03_display:GND", "esp:GND.1", "black", []],
 
     ["esp:D27", "rfid_main_entrance:SDA", "green", []],
     ["esp:D26", "rfid_main_entrance:SCK", "yellow", []],

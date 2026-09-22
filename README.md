@@ -47,7 +47,24 @@ smart-learning-center/
   sounds) or **Dismiss** (-> back to IDLE, logged as a false alarm). A human
   trigger (the manual pull station, or the dashboard's drill button) still
   goes straight to ACTIVE, since the human action is itself the
-  confirmation.
+  confirmation. **Dismiss** and **Clear Emergency** are always honored the
+  moment you click them - like Confirm, they're the admin's call, not
+  something the sensor reading can veto - and module D's own escalation
+  counters reset at the same time, so leaving the gas sensor's slider raised
+  in Wokwi won't cause an immediate new PENDING right after you dismiss or
+  clear one.
+- **Two physical LCDs, one I2C bus.** The Main Lobby display (`0x27`) rotates
+  through building-wide pages; a second, dedicated display for Smart
+  Classroom 1 (`0x28`) always shows that room's live temperature, humidity,
+  motion, and class state - both wired to the same SDA/SCL pins, addressed
+  separately, exactly like stacking two real I2C LCD backpacks on one bus.
+- **RFID cards register on the fly.** The seed registry only knows 12 fixed
+  UIDs, so a card you attach in the Wokwi editor almost certainly won't be
+  one of them and will read as Access Denied at first - that's the reader
+  correctly reporting an unrecognized card, not a bug. On the Attendance &
+  RFID page, the **Register New Card** panel auto-fills the UID from that
+  denied tap; give it a name and click **Register & Grant** to add it to the
+  registry and immediately show it as a granted attendance tap.
 - **CCTV is the presenter's own webcam**, shown via the browser's
   `getUserMedia()` API on the Security & Fire page - not a Wokwi part, since
   Wokwi has no camera peripheral. It starts **off**; use the **Turn On
@@ -156,6 +173,7 @@ left off.
 | ESP32 pin | Device (Wokwi part) | Room / purpose |
 |---|---|---|
 | GPIO21 (SDA) / GPIO22 (SCL) | `wokwi-lcd2004` 20x4 I2C character LCD (`0x27`) | Digital Information Display - Main Lobby |
+| GPIO21 (SDA) / GPIO22 (SCL) | `wokwi-lcd2004` 20x4 I2C character LCD (`0x28`) | Dedicated room display - Smart Classroom 1 (SF-03), same shared I2C bus, different address |
 | GPIO15 | DHT22 data | Temp/Humidity - Smart Classroom 1 (SF-03) |
 | GPIO13 | PIR HC-SR501 `OUT` | Motion/presence - SF-03 |
 | GPIO34 (ADC1) | MQ-2 `AOUT` | Smoke/gas level - Cafeteria (GF-06) |
@@ -254,7 +272,7 @@ this net if you extend the circuit.
 | CCTV / PIR | 5-6 | 1 PIR (SF-03, LIVE) + 1 browser webcam feed (LIVE); other camera tiles SIMULATED |
 | Environmental sensors (DHT) | 4-6 | 1 DHT22 (SF-03, LIVE); other zones SIMULATED |
 | Smart projectors | 2 | 1 relay-driven indicator (SF-03, LIVE) |
-| Digital displays | 3-4 | 1 20x4 I2C LCD (Main Lobby, LIVE); others SIMULATED on dashboard |
+| Digital displays | 3-4 | 2 20x4 I2C LCDs (Main Lobby + SF-03 room, both LIVE); others SIMULATED on dashboard |
 | Central controller | 1-2 | 1 Python (FastAPI) server (this repo) |
 | Network ESP32 modules | 2-3 | 1 ESP32 running every module concurrently (assignment requires a single microcontroller) |
 | Fire/safety set + indicators | 3-4 | MQ-2 smoke sensor (GF-06, LIVE) + 3 LEDs + buzzer (LIVE) |
@@ -267,7 +285,7 @@ is enabled by default - turn on the module each test needs from the
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Tap a registered card on the RFID reader | Attendance recorded, door unlocks for 3s. An unregistered UID gives Access Denied, nothing recorded. |
+| 1 | Tap a registered card on the RFID reader | Attendance recorded, door unlocks for 3s. An unregistered card gives Access Denied; register it from the Attendance & RFID page's **Register New Card** panel (UID auto-filled) and it's immediately granted. |
 | 2 | Enable Smart Room, then start class now (SF-03) | Relay ON, room ACTIVE. Push DHT22 temp above 28C -> alert. End class -> data saved, relay OFF. |
 | 3 | Raise MQ-2 briefly, then lower it | "Possible False Alarm" logged, no emergency. |
 | 4 | Raise MQ-2 high & sustained | Module G goes to **PENDING** - doors stay locked, no alarm yet. On the Security & Fire page, **Confirm Emergency** -> all doors unlock, alarm sounds; or **Dismiss** -> back to IDLE, logged as a false alarm. Once ACTIVE, **Clear Emergency** returns doors to locked. |

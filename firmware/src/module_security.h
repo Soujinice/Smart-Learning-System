@@ -53,6 +53,19 @@ public:
     thL1 = l1; thL2 = l2; thL3 = l3; thL4 = l4;
   }
 
+  // Wired from module G's onResolved: called whenever an emergency is
+  // dismissed or cleared, so a smoke reading that's still elevated at that
+  // exact moment can't immediately re-confirm a brand new PENDING/ACTIVE a
+  // tick later - the confirm counter and sustained-danger timer restart
+  // from a clean slate and have to build back up again for real.
+  void resetEscalation() {
+    aboveL2Count = 0;
+    verifying = false;
+    l3SustainedSince = 0;
+    setLevel(smokePercent >= thL1 ? L1_WATCH : L0_NORMAL);
+    indicators.setLevel(Indicators::LEVEL_NORMAL);
+  }
+
   void handleCommand(const String &type, JsonObjectConst payload) {
     if (type == "set_thresholds") {
       if (payload["smoke_l1"].is<float>()) thL1 = payload["smoke_l1"].as<float>();

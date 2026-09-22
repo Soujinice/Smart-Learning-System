@@ -1,11 +1,13 @@
-// Digital Information Display - Main Lobby (GF-01), 20x4 I2C character LCD
-// (Wokwi part "wokwi-lcd2004", library LiquidCrystal_I2C). Swapped in place
-// of the original SSD1306 graphic OLED because its large blocky characters
-// are far easier to read in a Wokwi screenshot/recording than a small
-// 128x64 graphic display. Rotates every 3 seconds through one page per
-// currently-enabled module (plus an always-on building-status page).
-// A full-screen page takes over while module G is PENDING (awaiting admin
-// confirmation) or ACTIVE/RESPONSE (confirmed override).
+// Digital Information Displays - two 20x4 I2C character LCDs (Wokwi part
+// "wokwi-lcd2004", library LiquidCrystal_I2C) sharing one I2C bus at
+// different addresses, same as wiring two real I2C LCD backpacks together:
+//   - Main Lobby (GF-01), address 0x27: rotates every 3s through one page
+//     per currently-enabled module (plus an always-on building-status
+//     page).
+//   - Smart Classroom 1 (SF-03), address 0x28: a dedicated room display -
+//     always shows live temp/humidity/motion/class state for that room.
+// A full-screen alert page takes over on BOTH displays while module G is
+// PENDING (awaiting admin confirmation) or ACTIVE (confirmed override).
 #pragma once
 
 #include <Arduino.h>
@@ -22,6 +24,7 @@ struct DisplaySnapshot {
   float smokePct = 0; uint8_t smokeLevel = 0;
   float roomTempC = 24; float roomHumPct = 55; bool roomMotion = false;
   String smartRoomState = "STANDBY";
+  uint32_t roomAttendance = 0;
 
   uint32_t attendanceToday = 0;
   int doorsUnlocked = 0; int doorsTotal = 1;
@@ -32,8 +35,8 @@ struct DisplaySnapshot {
   float wastePct = 0; bool wasteFull = false;
 
   // Which modules are currently enabled (see main.cpp ModuleFlags) - the
-  // matching LCD page is skipped in rotation when its module is off.
-  bool smartRoomEnabled = true;
+  // matching LCD page is skipped in rotation when its module is off. The
+  // SF-03 room display always shows regardless (it's just one page).
   bool rfidEnabled = true;
   bool securityEnabled = true;
   bool networkEnabled = true;
@@ -44,12 +47,14 @@ class DisplayModule {
 public:
   bool begin() {
     Wire.begin(PIN_LCD_SDA, PIN_LCD_SCL);
-    lcd.init();
-    lcd.backlight();
-    lcd.setCursor(0, 0);
-    lcd.print("Smart Learning Ctr");
-    lcd.setCursor(0, 1);
-    lcd.print("Booting...");
+    lcdLobby.init();
+    lcdLobby.backlight();
+    lcdRoom.init();
+    lcdRoom.backlight();
+    line(lcdLobby, 0, "Smart Learning Ctr");
+    line(lcdLobby, 1, "Booting...");
+    line(lcdRoom, 0, "SF-03 Classroom");
+    line(lcdRoom, 1, "Booting...");
     ready = true; // the LCD2004 has no I2C-ack probe in this library; assume present
     return ready;
   }
@@ -57,17 +62,18 @@ public:
   void loop(const DisplaySnapshot &snap) {
     if (!ready) return;
 
-    if (snap.emergencyActive) { drawActive(snap); return; }
-    if (snap.emergencyPending) { drawPending(snap); return; }
+    if (snap.emergencyActive) { drawActive(lcdLobby, snap); drawActive(lcdRoom, snap); return; }
+    if (snap.emergencyPending) { drawPending(lcdLobby, snap); drawPending(lcdRoom, snap); return; }
 
-    uint8_t activePages[6];
+    drawRoom(snap); // SF-03 display: always live, no rotation needed
+
+    uint8_t activePages[5];
     uint8_t activeCount = 0;
     activePages[activeCount++] = 0; // building status - always shown
-    if (snap.smartRoomEnabled) activePages[activeCount++] = 1;
-    if (snap.rfidEnabled) activePages[activeCount++] = 2;
-    if (snap.securityEnabled) activePages[activeCount++] = 3;
-    if (snap.networkEnabled) activePages[activeCount++] = 4;
-    if (snap.wasteEnabled) activePages[activeCount++] = 5;
+    if (snap.rfidEnabled) activePages[activeCount++] = 1;
+    if (snap.securityEnabled) activePages[activeCount++] = 2;
+    if (snap.networkEnabled) activePages[activeCount++] = 3;
+    if (snap.wasteEnabled) activePages[activeCount++] = 4;
 
     unsigned long now = millis();
     if (now - lastSwitch >= 3000) {
@@ -78,84 +84,84 @@ public:
 
     switch (activePages[pageIndex]) {
       case 0: drawBuilding(snap); break;
-      case 1: drawEnvironment(snap); break;
-      case 2: drawAccess(snap); break;
-      case 3: drawSecurity(snap); break;
-      case 4: drawNetwork(snap); break;
-      case 5: drawWaste(snap); break;
+      case 1: drawAccess(snap); break;
+      case 2: drawSecurity(snap); break;
+      case 3: drawNetwork(snap); break;
+      case 4: drawWaste(snap); break;
     }
   }
 
 private:
-  LiquidCrystal_I2C lcd { 0x27, 20, 4 };
+  LiquidCrystal_I2C lcdLobby { 0x27, 20, 4 }; // Main Lobby - GF-01
+  LiquidCrystal_I2C lcdRoom { 0x28, 20, 4 };  // Smart Classroom 1 - SF-03
   bool ready = false;
   uint8_t pageIndex = 0;
   unsigned long lastSwitch = 0;
 
   // Writes exactly 20 characters to a row (space-padded/truncated) so stale
   // characters from a longer previous line never linger on screen.
-  void line(uint8_t row, const String &text) {
+  void line(LiquidCrystal_I2C &target, uint8_t row, const String &text) {
     String padded = text;
     if (padded.length() > 20) padded = padded.substring(0, 20);
     while (padded.length() < 20) padded += ' ';
-    lcd.setCursor(0, row);
-    lcd.print(padded);
+    target.setCursor(0, row);
+    target.print(padded);
   }
 
   void drawBuilding(const DisplaySnapshot &s) {
-    line(0, "BUILDING STATUS");
-    line(1, "Doors: " + String(s.doorsUnlocked) + "/" + String(s.doorsTotal));
-    line(2, "Attendance: " + String(s.attendanceToday));
-    line(3, "Time " + s.simTime);
+    line(lcdLobby, 0, "BUILDING STATUS");
+    line(lcdLobby, 1, "Doors: " + String(s.doorsUnlocked) + "/" + String(s.doorsTotal));
+    line(lcdLobby, 2, "Attendance: " + String(s.attendanceToday));
+    line(lcdLobby, 3, "Time " + s.simTime);
   }
 
-  void drawEnvironment(const DisplaySnapshot &s) {
-    line(0, "ENVIRONMENT SF-03");
-    line(1, "Temp: " + String(s.roomTempC, 1) + "C");
-    line(2, "Hum: " + String(s.roomHumPct, 0) + "%  Mot:" + (s.roomMotion ? "Y" : "N"));
-    line(3, "Room: " + s.smartRoomState);
+  void drawRoom(const DisplaySnapshot &s) {
+    line(lcdRoom, 0, "SF-03 CLASSROOM");
+    line(lcdRoom, 1, "Temp: " + String(s.roomTempC, 1) + "C  Hum:" + String(s.roomHumPct, 0) + "%");
+    line(lcdRoom, 2, "Room: " + s.smartRoomState + "  Mot:" + (s.roomMotion ? "Y" : "N"));
+    line(lcdRoom, 3, "Attend: " + String(s.roomAttendance) + "  " + s.simTime);
   }
 
   void drawAccess(const DisplaySnapshot &s) {
-    line(0, "ACCESS / ATTENDANCE");
-    line(1, "Today: " + String(s.attendanceToday));
-    line(2, s.doorsUnlocked > 0 ? "Door: UNLOCKED" : "Door: locked");
-    line(3, "Time " + s.simTime);
+    line(lcdLobby, 0, "ACCESS / ATTENDANCE");
+    line(lcdLobby, 1, "Today: " + String(s.attendanceToday));
+    line(lcdLobby, 2, s.doorsUnlocked > 0 ? "Door: UNLOCKED" : "Door: locked");
+    line(lcdLobby, 3, "Time " + s.simTime);
   }
 
   void drawSecurity(const DisplaySnapshot &s) {
-    line(0, "SECURITY & FIRE");
-    line(1, "Smoke level: L" + String(s.smokeLevel));
-    line(2, "Smoke: " + String(s.smokePct, 0) + "%");
-    line(3, "Time " + s.simTime);
+    line(lcdLobby, 0, "SECURITY & FIRE");
+    line(lcdLobby, 1, "Smoke level: L" + String(s.smokeLevel));
+    line(lcdLobby, 2, "Smoke: " + String(s.smokePct, 0) + "%");
+    line(lcdLobby, 3, "Time " + s.simTime);
   }
 
   void drawNetwork(const DisplaySnapshot &s) {
-    line(0, "NETWORK / FIREWALL");
-    line(1, s.wifiConnected ? ("WAN: OK " + String(s.rssi) + "dBm") : "WAN: offline");
-    line(2, "Blocked: " + String(s.blockedHosts));
-    line(3, "Time " + s.simTime);
+    line(lcdLobby, 0, "NETWORK / FIREWALL");
+    line(lcdLobby, 1, s.wifiConnected ? ("WAN: OK " + String(s.rssi) + "dBm") : "WAN: offline");
+    line(lcdLobby, 2, "Blocked: " + String(s.blockedHosts));
+    line(lcdLobby, 3, "Time " + s.simTime);
   }
 
   void drawWaste(const DisplaySnapshot &s) {
-    line(0, "WASTE - MAIN LOBBY");
-    line(1, "Fill: " + String(s.wastePct, 0) + "%");
-    line(2, s.wasteFull ? "STATUS: BIN FULL" : "STATUS: normal");
-    line(3, "Time " + s.simTime);
+    line(lcdLobby, 0, "WASTE - MAIN LOBBY");
+    line(lcdLobby, 1, "Fill: " + String(s.wastePct, 0) + "%");
+    line(lcdLobby, 2, s.wasteFull ? "STATUS: BIN FULL" : "STATUS: normal");
+    line(lcdLobby, 3, "Time " + s.simTime);
   }
 
-  void drawPending(const DisplaySnapshot &s) {
-    line(0, "!! CHECK REQUIRED !!");
-    line(1, "Possible fire/smoke");
-    line(2, "Awaiting admin ack");
-    line(3, "Time " + s.simTime);
+  void drawPending(LiquidCrystal_I2C &target, const DisplaySnapshot &s) {
+    line(target, 0, "!! CHECK REQUIRED !!");
+    line(target, 1, "Possible fire/smoke");
+    line(target, 2, "Awaiting admin ack");
+    line(target, 3, "Time " + s.simTime);
   }
 
-  void drawActive(const DisplaySnapshot &s) {
-    line(0, "!!! EMERGENCY !!!");
-    line(1, "State: " + s.emergencyState);
-    line(2, "ALL DOORS UNLOCKED");
-    line(3, "Time " + s.simTime);
+  void drawActive(LiquidCrystal_I2C &target, const DisplaySnapshot &s) {
+    line(target, 0, "!!! EMERGENCY !!!");
+    line(target, 1, "State: " + s.emergencyState);
+    line(target, 2, "ALL DOORS UNLOCKED");
+    line(target, 3, "Time " + s.simTime);
   }
 };
 

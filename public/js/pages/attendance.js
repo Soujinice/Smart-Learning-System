@@ -8,6 +8,12 @@ let registry = [];
 let attendanceRows = [];
 let filters = { room: '', role: '', q: '' };
 
+let regUid = '';
+let regName = '';
+let regRole = 'student';
+let regRoom = '';
+let lastAutoFilledUid = null;
+
 async function loadAttendance() {
   const r = await api.attendance(Object.fromEntries(Object.entries(filters).filter(([, v]) => v)));
   attendanceRows = r.attendance;
@@ -29,6 +35,8 @@ function render() {
 
   const grid2 = el('div', { class: 'grid grid-2' }, [readerCard, tapForm]);
   container.appendChild(grid2);
+
+  container.appendChild(buildRegisterPanel());
 
   const feed = el('div', { class: 'feed' }, state.rfidTaps.slice(0, 25).map((tapEvt) => el('div', { class: `feed-item sev-${tapEvt.result === 'denied' ? 'critical' : tapEvt.result?.startsWith('granted') ? 'info' : 'warning'}` }, [
     el('span', { class: 'ts' }, fmtTime(tapEvt.ts)),
@@ -84,6 +92,56 @@ function buildTapPanel() {
   return card('Virtual Tap', [
     el('div', { class: 'form-inline' }, [select, btn]),
   ]);
+}
+
+function buildRegisterPanel() {
+  // Auto-fill the UID from the most recent denied tap (once per new UID, so
+  // it doesn't keep stomping on something the admin is editing) - tapping
+  // an unrecognized card on the Wokwi reader surfaces it here without
+  // needing to copy/paste the UID by hand.
+  const lastTap = state.rfidTaps[0];
+  if (lastTap && lastTap.result === 'denied' && lastTap.uid !== lastAutoFilledUid) {
+    regUid = lastTap.uid;
+    lastAutoFilledUid = lastTap.uid;
+  }
+
+  const uidInput = el('input', { type: 'text', placeholder: 'UID', value: regUid, oninput: (e) => { regUid = e.target.value; } });
+  const nameInput = el('input', { type: 'text', placeholder: 'Name (optional)', value: regName, oninput: (e) => { regName = e.target.value; } });
+  const roleSelect = el('select', { onchange: (e) => { regRole = e.target.value; } }, [
+    el('option', { value: 'student', selected: regRole === 'student' ? 'selected' : null }, 'Student'),
+    el('option', { value: 'faculty', selected: regRole === 'faculty' ? 'selected' : null }, 'Faculty'),
+  ]);
+  const roomInput = el('input', { type: 'text', placeholder: 'Room (optional)', value: regRoom, oninput: (e) => { regRoom = e.target.value; } });
+
+  const registerBtn = el('button', {
+    class: 'pill-btn primary',
+    onclick: async () => {
+      const uid = regUid.trim();
+      if (!uid) { toast('Tap a card on the reader (or the Virtual Tap panel) to get a UID first', 'error'); return; }
+      const name = regName.trim() || `New Card ${uid.slice(-4)}`;
+      const newUser = { uid, name, role: regRole, room: regRoom.trim(), section: '' };
+      const updated = [...registry.filter((u) => u.uid !== uid), newUser];
+      try {
+        await api.saveRfid(updated);
+        registry = updated;
+        await api.tap(uid); // re-tap immediately so it shows granted right away
+        toast(`${name} registered - tap granted`, 'success');
+        regUid = ''; regName = ''; regRoom = ''; lastAutoFilledUid = null;
+        render();
+      } catch (e) { toast(e.message, 'error'); }
+    },
+  }, 'Register & Grant');
+
+  return el('div', { style: 'margin-bottom:16px;' }, [card('Register New Card', [
+    el('div', { style: 'color:var(--text-muted);font-size:12.5px;' }, 'Tap an unrecognized card on the Wokwi reader, then register it here so it (and every tap after) is granted.'),
+    el('div', { class: 'form-inline', style: 'margin-top:8px;' }, [
+      el('div', { class: 'form-row' }, [el('label', {}, 'UID'), uidInput]),
+      el('div', { class: 'form-row' }, [el('label', {}, 'Name'), nameInput]),
+      el('div', { class: 'form-row' }, [el('label', {}, 'Role'), roleSelect]),
+      el('div', { class: 'form-row' }, [el('label', {}, 'Room'), roomInput]),
+      registerBtn,
+    ]),
+  ])]);
 }
 
 function buildFilterBar() {
