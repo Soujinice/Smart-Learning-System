@@ -68,6 +68,17 @@ smart-learning-center/
   also clears the reader's duplicate-tap guard for that UID, so a real
   re-tap right after registering is re-checked fresh instead of being
   swallowed as a duplicate of the earlier denial.
+- **Registry updates now actually reach the firmware.** Every `sync_users`
+  command sends the *entire* registry, and even the 12 seed users alone
+  serialize past 1.2KB - the firmware's incoming serial line buffer was
+  capped at 900 bytes as an arbitrary safety limit, so that command was
+  being silently truncated and dropped before it ever reached `syncUsers()`.
+  Registering a card looked like it worked (the server accepted the
+  request), but the ESP32's own copy of the registry was never actually
+  updated, so every subsequent tap of that card still came back denied.
+  The cap is now 8KB - comfortably past the largest payload the firmware
+  can ever produce (a full 32-user registry or 24-entry schedule) - see
+  `pollSerial()` in `firmware/src/main.cpp`.
 - **Ending a class sticks.** "Start Class Now" / "End Class Now" on the
   Smart Room page take effect immediately, and once you manually end a
   class it stays in STANDBY (relay off) even if the sim clock is still

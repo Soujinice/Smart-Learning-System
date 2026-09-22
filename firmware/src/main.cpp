@@ -176,7 +176,16 @@ void pollSerial() {
       serialBuffer = "";
     } else if (c != '\r') {
       serialBuffer += c;
-      if (serialBuffer.length() > 900) serialBuffer = "";
+      // A full sync_users at MAX_USERS (32) or sync_schedule at MAX_SCHEDULE
+      // (24) can run past 4KB - this cap only exists to bound a runaway
+      // line (e.g. noise with no newline), not to reject legitimate
+      // commands. It silently discarded real commands at the old 900-char
+      // cap, which a registry of even the 12 seed users already exceeds
+      // (~1.2KB) - every sync_users after that point was dropped on the
+      // floor, so a newly registered card could never actually take
+      // effect. 8KB leaves 2x headroom over the largest payload the
+      // firmware can ever produce.
+      if (serialBuffer.length() > 8192) serialBuffer = "";
     }
   }
 }
