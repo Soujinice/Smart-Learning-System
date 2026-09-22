@@ -39,7 +39,7 @@ firmware's `Proto::begin(...)` / `Proto::send(...)` calls exactly.
 
 | `t` | When | Key fields |
 |---|---|---|
-| `boot` | Once, at startup | `device`, `fw`, `modules` |
+| `boot` | Once, at startup | `device`, `fw`, `modules`. Triggers the server's `sync_users`/`sync_schedule`/`set_thresholds` resync (see `on_device_message` in `server/main.py`) - the firmware's registry/schedule live only in RAM, so this is what restores them after every reset. |
 | `telemetry` | Every 1s | `sim_time`, `sim_scale`, `uptime_s`, `heap_free`, `environment{temp_c,humidity_pct,motion,aqi}`, `security{smoke_pct,smoke_level,intrusion,false_alarms}`, `smart_room{room,state,subject,section,faculty,attendance,abnormal}`, `waste{fill_pct,full}`, `metal_detector{threshold_pct,hold_active}`, `doors{main_entrance_unlocked,override_active}`, `emergency{state,active,pending}`, `wifi{connected,rssi,ip}`, `relay_sf03`, `attendance_today`, `modules{rfid,smart_room,environment,security,metal_detector,waste,network}` |
 | `rfid` | On every tap (reader or web) | `uid`, `source` (`reader`\|`web`), `result` (`granted`\|`granted_hold`\|`denied`\|`duplicate`\|`bypassed_emergency`), `name`, `role`, `room`, `ts` |
 | `attendance` | On a granted tap | `uid`, `name`, `role`, `room`, `ts`, `source` |

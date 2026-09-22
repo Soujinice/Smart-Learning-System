@@ -98,9 +98,15 @@ async def on_device_connected():
     global device_connected
     device_connected = True
     await broadcast_status()
-    await send_command("sync_users", {"users": db.get("rfid_registry")})
-    await send_command("sync_schedule", {"entries": db.get("schedule")})
-    await send_command("set_thresholds", db.get("thresholds"))
+    # Registry/schedule/threshold resync happens on the firmware's own
+    # "boot" message (see on_device_message), not here - "connected" fires
+    # the instant the RFC2217 TCP socket opens, which can be well before
+    # the ESP32 has actually finished setup() and is ready to receive
+    # commands on its UART. Sending this early risked the resync silently
+    # arriving during boot and being lost, which would leave the firmware
+    # holding only its 12 hardcoded seed users - "registered" cards read
+    # as denied again after every Wokwi restart even though the server's
+    # own copy of the registry was correct the whole time.
 
 
 async def on_device_disconnected():
@@ -137,7 +143,15 @@ async def apply_emergency_door_effects(msg):
 async def on_device_message(msg):
     global last_telemetry, last_net_stats
     t = msg.get("t")
-    if t == "telemetry":
+    if t == "boot":
+        # The firmware only ever reaches setup()'s final Proto::send(boot)
+        # once Serial and every module's begin() have run, so this is the
+        # first moment it's actually safe to push state at it - resync the
+        # registry/schedule/thresholds it may have lost across the reset.
+        await send_command("sync_users", {"users": db.get("rfid_registry")})
+        await send_command("sync_schedule", {"entries": db.get("schedule")})
+        await send_command("set_thresholds", db.get("thresholds"))
+    elif t == "telemetry":
         last_telemetry = msg
     elif t == "attendance":
         db.push("attendance", {**msg, "id": str(uuid.uuid4())})

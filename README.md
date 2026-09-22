@@ -79,6 +79,29 @@ smart-learning-center/
   The cap is now 8KB - comfortably past the largest payload the firmware
   can ever produce (a full 32-user registry or 24-entry schedule) - see
   `pollSerial()` in `firmware/src/main.cpp`.
+- **The registry now survives restarting Wokwi.** The firmware's copy of
+  the registry lives entirely in RAM (`RegisteredUser users[MAX_USERS]`),
+  so every time the ESP32/Wokwi simulation resets it forgets everything
+  except its 12 hardcoded seed users - a card registered in an earlier
+  session reads as denied again after a restart even though the server
+  still has it saved. The server already resent the full registry on every
+  reconnect, but it used to do that the instant the RFC2217 socket opened,
+  which can be before the ESP32 has finished booting and is ready to read
+  its UART - an early resync could be lost the same way a too-large one
+  used to be. It now waits for the firmware's own `boot` message (the last
+  thing `setup()` sends, once every module's `begin()` has run) before
+  pushing `sync_users`/`sync_schedule`/`set_thresholds`, so the resync
+  always lands. See `on_device_message`'s `t == "boot"` case in
+  `server/main.py`.
+- **Checking you're on the latest firmware.** Every firmware fix requires
+  rebuilding (`pio run`) and *fully restarting* the Wokwi simulation (stop,
+  not just leave it running) before it takes effect - the website updates
+  live, but Wokwi runs a compiled binary that doesn't. `FIRMWARE_VERSION`
+  in `firmware/src/config.h` is bumped with changes worth confirming are
+  actually running; it's reported in the `boot` message and visible on the
+  Diagnostics page's raw console, so if something "isn't fixed," checking
+  that version against what's on the branch is the fastest way to tell a
+  real regression from an unrebuilt binary.
 - **Ending a class sticks.** "Start Class Now" / "End Class Now" on the
   Smart Room page take effect immediately, and once you manually end a
   class it stays in STANDBY (relay off) even if the sim clock is still

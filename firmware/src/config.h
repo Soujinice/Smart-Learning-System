@@ -48,7 +48,14 @@
 // Identity
 // ---------------------------------------------------------------------------
 #define DEVICE_ID            "ESP32-SLC-01"
-#define FIRMWARE_VERSION     "1.0.0"
+// Bump this with any firmware change worth being able to confirm is
+// actually running - it's reported in the "boot" message (t:"boot",
+// fw:"..."), visible in the Diagnostics page's raw console and in
+// firmware/wokwi.toml's build. If a fix "isn't working," checking this
+// against the version in firmware/src/config.h on the branch is the
+// fastest way to tell a real regression from Wokwi still running an
+// unrebuilt/unrestarted binary.
+#define FIRMWARE_VERSION     "1.3.0"
 #define SERIAL_BAUD          115200
 
 // Machine-readable lines are prefixed with this marker so ordinary
