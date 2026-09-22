@@ -6,6 +6,11 @@ let container = null;
 let unsub = null;
 let schedule = [];
 
+let boardCanvasEl = null;
+let boardCtx = null;
+let boardDrawing = false;
+let boardLast = null;
+
 const STEPS = [
   { id: 'STANDBY', label: 'Standby' },
   { id: 'ACTIVE_BEFORE', label: 'Before Class' },
@@ -51,6 +56,9 @@ function render() {
 
   container.appendChild(grid2);
 
+  container.appendChild(el('div', { class: 'section-title' }, 'Smart Board'));
+  container.appendChild(buildSmartBoardCard(t?.relay_sf03));
+
   const grid3 = el('div', { class: 'grid grid-2', style: 'margin-top:16px;' });
   grid3.appendChild(card('Readings', [
     row('Temperature', `${(t?.environment?.temp_c ?? 0).toFixed(1)} C`),
@@ -84,6 +92,60 @@ function render() {
     ],
     schedule.filter((s) => s.room === 'SF-03'),
   )]));
+}
+
+function buildSmartBoardCard(relayOn) {
+  if (!boardCanvasEl) {
+    boardCanvasEl = el('canvas', {
+      width: '640',
+      height: '260',
+      style: 'width:100%;height:220px;border-radius:6px;background:#0e1520;display:block;touch-action:none;cursor:crosshair;',
+    });
+    boardCtx = boardCanvasEl.getContext('2d');
+    boardCtx.strokeStyle = '#F3F4F6';
+    boardCtx.lineWidth = 2.5;
+    boardCtx.lineCap = 'round';
+    boardCtx.lineJoin = 'round';
+
+    const posFromEvent = (e) => {
+      const rect = boardCanvasEl.getBoundingClientRect();
+      const point = e.touches ? e.touches[0] : e;
+      return {
+        x: ((point.clientX - rect.left) / rect.width) * boardCanvasEl.width,
+        y: ((point.clientY - rect.top) / rect.height) * boardCanvasEl.height,
+      };
+    };
+    const start = (e) => { boardDrawing = true; boardLast = posFromEvent(e); e.preventDefault(); };
+    const move = (e) => {
+      if (!boardDrawing) return;
+      const p = posFromEvent(e);
+      boardCtx.beginPath();
+      boardCtx.moveTo(boardLast.x, boardLast.y);
+      boardCtx.lineTo(p.x, p.y);
+      boardCtx.stroke();
+      boardLast = p;
+      e.preventDefault();
+    };
+    const end = () => { boardDrawing = false; boardLast = null; };
+
+    boardCanvasEl.addEventListener('mousedown', start);
+    boardCanvasEl.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    boardCanvasEl.addEventListener('touchstart', start, { passive: false });
+    boardCanvasEl.addEventListener('touchmove', move, { passive: false });
+    boardCanvasEl.addEventListener('touchend', end);
+  }
+
+  return card('Interactive Board - SF-03 (website demo)', [
+    el('div', { class: 'sub', style: 'margin-bottom:8px;' }, 'Draw to represent the board/projector content shown in class. Wokwi has no touchscreen or whiteboard part, so this is simulated here on the dashboard.'),
+    boardCanvasEl,
+    el('div', { class: 'form-inline', style: 'margin-top:8px;' }, [
+      el('button', {
+        class: 'pill-btn ghost',
+        onclick: () => boardCtx.clearRect(0, 0, boardCanvasEl.width, boardCanvasEl.height),
+      }, 'Clear Board'),
+    ]),
+  ], { titleRight: liveBadge(!!relayOn) });
 }
 
 function simClockControls() {

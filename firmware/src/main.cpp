@@ -137,7 +137,7 @@ void dispatchCommand(const String &type, JsonObjectConst payload) {
     metalDetector.handleCommand(type, payload);
   } else if (type == "waste_collect") {
     waste.handleCommand(type, payload);
-  } else if (type == "emergency_ack" || type == "emergency_clear" || type == "emergency_test") {
+  } else if (type == "emergency_confirm" || type == "emergency_dismiss" || type == "emergency_clear" || type == "emergency_test") {
     emergencyModule.handleCommand(type, payload);
   } else if (type == "net_scenario" || type == "net_request") {
     network.handleCommand(type, payload);
@@ -227,6 +227,7 @@ void sendTelemetry() {
   JsonObject emerg = doc["emergency"].to<JsonObject>();
   emerg["state"] = emergencyModule.stateName();
   emerg["active"] = emergencyModule.isOverrideActive();
+  emerg["pending"] = emergencyModule.isPending();
 
   JsonObject wifi = doc["wifi"].to<JsonObject>();
   wifi["connected"] = network.isWifiConnected();
@@ -253,6 +254,7 @@ void refreshDisplay() {
   DisplaySnapshot snap;
   snap.simTime = simClock.hhmm();
   snap.emergencyActive = emergencyModule.isOverrideActive();
+  snap.emergencyPending = emergencyModule.isPending();
   snap.emergencyState = emergencyModule.stateName();
   snap.smokePct = security.smokePct();
   snap.smokeLevel = (uint8_t)security.currentLevel();

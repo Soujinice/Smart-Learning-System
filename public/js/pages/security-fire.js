@@ -6,6 +6,10 @@ let container = null;
 let unsub = null;
 let thresholds = null;
 
+let webcamStream = null;
+let webcamVideoEl = null;
+let webcamError = null;
+
 const LEVEL_LABELS = ['Normal', 'Watch', 'Warning', 'Danger', 'CONFIRMED EMERGENCY'];
 const LEVEL_COLORS = ['var(--green)', 'var(--green)', 'var(--amber)', 'var(--amber)', 'var(--red-primary)'];
 
@@ -14,8 +18,12 @@ function render() {
   clearNode(container);
   const t = state.telemetry;
   const level = t?.security?.smoke_level ?? 0;
+  const emergency = t?.emergency || { state: 'IDLE', active: false, pending: false };
 
   container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Security & Fire')]));
+
+  if (emergency.pending) container.appendChild(pendingCard(emergency));
+  if (emergency.active) container.appendChild(activeCard(emergency));
 
   const grid2 = el('div', { class: 'grid grid-2' });
   grid2.appendChild(card('Smoke / Fire - GF-06', [
@@ -25,11 +33,7 @@ function render() {
     thresholds ? row('Thresholds L1-L4', `${thresholds.smoke_l1}/${thresholds.smoke_l2}/${thresholds.smoke_l3}/${thresholds.smoke_l4}%`) : null,
   ], { titleRight: liveBadge(true) }));
 
-  grid2.appendChild(card('CCTV - SF-03', [
-    row('Camera', 'CAM-SF03-01'),
-    row('Motion', t?.environment?.motion ? 'PRESENT' : 'none'),
-    row('Last motion', t?.sim_time || '-'),
-  ]));
+  grid2.appendChild(buildCctvCard(t));
   container.appendChild(grid2);
 
   container.appendChild(el('div', { class: 'section-title' }, 'Metal Detector'));
@@ -78,6 +82,77 @@ function render() {
     ),
   ]));
   container.appendChild(grid3);
+
+  // The <video> element must exist in the DOM before we can attach a
+  // stream to it; render() just rebuilt the page, so reattach now.
+  attachWebcamStream();
+}
+
+function pendingCard(emergency) {
+  return el('div', { class: 'card alert-card alert-pending', style: 'margin-bottom:16px;' }, [
+    el('div', { class: 'alert-card-title' }, 'POSSIBLE EMERGENCY - CONFIRMATION NEEDED'),
+    el('div', { class: 'sub' }, emergency.reason || 'Sensors reported a sustained fire/smoke condition. Doors remain locked and no alarm has sounded until an admin decides.'),
+    el('div', { class: 'form-inline', style: 'margin-top:10px;' }, [
+      el('button', { class: 'pill-btn primary', onclick: () => act('confirm') }, 'Confirm Emergency'),
+      el('button', { class: 'pill-btn ghost', onclick: () => act('dismiss') }, 'Dismiss (False Alarm)'),
+    ]),
+  ]);
+}
+
+function activeCard(emergency) {
+  return el('div', { class: 'card alert-card alert-active', style: 'margin-bottom:16px;' }, [
+    el('div', { class: 'alert-card-title' }, 'EMERGENCY ACTIVE - ALL DOORS UNLOCKED'),
+    el('div', { class: 'sub' }, `State: ${emergency.state}`),
+    el('div', { class: 'form-inline', style: 'margin-top:10px;' }, [
+      el('button', { class: 'pill-btn primary', onclick: () => act('clear') }, 'Clear Emergency'),
+    ]),
+  ]);
+}
+
+async function act(action) {
+  try {
+    await api.emergency(action);
+    toast(`Emergency ${action} sent`, 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function buildCctvCard(t) {
+  webcamVideoEl = el('video', { autoplay: 'autoplay', playsinline: 'playsinline', muted: 'muted', style: 'width:100%;border-radius:6px;background:#12181f;display:block;max-height:220px;object-fit:cover;' });
+  const status = webcamError
+    ? el('div', { class: 'empty-state' }, webcamError)
+    : el('div', {}, [webcamVideoEl]);
+  return card('CCTV - SF-03', [
+    status,
+    row('Motion (PIR)', t?.environment?.motion ? 'PRESENT' : 'none'),
+  ].filter(Boolean), { titleRight: liveBadge(!webcamError) });
+}
+
+function attachWebcamStream() {
+  if (!webcamVideoEl) return;
+  if (webcamStream) {
+    webcamVideoEl.srcObject = webcamStream;
+    return;
+  }
+  if (webcamError) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    webcamError = 'This browser does not support camera access (getUserMedia).';
+    render();
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then((stream) => {
+    webcamStream = stream;
+    if (webcamVideoEl) webcamVideoEl.srcObject = stream;
+  }).catch(() => {
+    webcamError = 'Camera permission denied or unavailable - allow camera access in the browser to show a live feed here.';
+    render();
+  });
+}
+
+function stopWebcam() {
+  if (webcamStream) {
+    webcamStream.getTracks().forEach((t) => t.stop());
+    webcamStream = null;
+  }
 }
 
 async function decide(allow) {
@@ -94,6 +169,7 @@ function row(label, value) {
 export default {
   mount(rootEl) {
     container = rootEl;
+    webcamError = null;
     Promise.all([api.thresholds(), api.screenings(), api.falseAlarms()]).then(([th, sc, fa]) => {
       thresholds = th.thresholds;
       state.screenings = sc.screenings;
@@ -103,5 +179,10 @@ export default {
     unsub = onStoreChange(render);
     render();
   },
-  unmount() { if (unsub) unsub(); container = null; },
+  unmount() {
+    if (unsub) unsub();
+    stopWebcam();
+    webcamVideoEl = null;
+    container = null;
+  },
 };

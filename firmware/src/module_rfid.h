@@ -1,14 +1,16 @@
 // Module A - RFID / Attendance.
-// Wokwi has no native RC522/PN532 part, so RFID is simulated two ways:
-//   1. Three pushbuttons (CARD1 = registered student, CARD2 = registered
-//      faculty, CARD3 = an unregistered/invalid card).
-//   2. Virtual taps sent from the website (source "web"), e.g. tapping any
-//      of the registered users shown in the Attendance & RFID page.
-// Both paths feed the same handler, exactly like a real reader would.
+// Real hardware: an MFRC522 RC522 reader (Wokwi part "board-mfrc522") over
+// a custom SPI pin set (see config.h). To simulate a tap in Wokwi, attach
+// a virtual RFID/NFC card to the reader (right-click the part in the
+// diagram - Wokwi's own UI for choosing/creating a tag UID) or use the
+// website's "virtual tap" panel, which sends the same event over the wire
+// as source "web" so the firmware can't tell the difference.
 #pragma once
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <SPI.h>
+#include <MFRC522.h>
 #include <functional>
 #include "config.h"
 #include "protocol.h"
@@ -40,9 +42,8 @@ public:
   std::function<void(const String &room, const String &name, const String &role)> onAttendanceGranted;
 
   void begin() {
-    pinMode(PIN_BTN_CARD1, INPUT_PULLUP);
-    pinMode(PIN_BTN_CARD2, INPUT_PULLUP);
-    pinMode(PIN_BTN_CARD3, INPUT_PULLUP);
+    SPI.begin(PIN_RFID_SCK, PIN_RFID_MISO, PIN_RFID_MOSI, PIN_RFID_SS);
+    reader.PCD_Init();
     seedDefaultUsers();
   }
 
@@ -78,9 +79,12 @@ public:
   }
 
   void loop() {
-    handleButton(PIN_BTN_CARD1, btn1Down, "04A3C1B2");
-    handleButton(PIN_BTN_CARD2, btn2Down, "04B7E2F1");
-    handleButton(PIN_BTN_CARD3, btn3Down, "FFFFFFFF"); // intentionally unregistered
+    if (!reader.PICC_IsNewCardPresent()) return;
+    if (!reader.PICC_ReadCardSerial()) return;
+    String uid = uidToString(reader.uid.uidByte, reader.uid.size);
+    reader.PICC_HaltA();
+    reader.PCD_StopCrypto1();
+    processTap(uid, "reader");
   }
 
   void handleWebTap(const String &uid) {
@@ -100,21 +104,23 @@ public:
   }
 
 private:
+  MFRC522 reader { PIN_RFID_SS, PIN_RFID_RST };
+
   RegisteredUser users[MAX_USERS];
   uint8_t userCount = 0;
 
-  bool btn1Down = false, btn2Down = false, btn3Down = false;
   String lastUid;
   unsigned long lastTapMs = 0;
 
-  void handleButton(uint8_t pin, bool &downState, const char *uid) {
-    bool pressed = digitalRead(pin) == LOW;
-    if (pressed && !downState) {
-      downState = true;
-      processTap(String(uid), "button");
-    } else if (!pressed) {
-      downState = false;
+  static String uidToString(byte *bytes, byte size) {
+    char buf[3];
+    String out;
+    out.reserve(size * 2);
+    for (byte i = 0; i < size; i++) {
+      snprintf(buf, sizeof(buf), "%02X", bytes[i]);
+      out += buf;
     }
+    return out;
   }
 
   int findUser(const String &uid) {

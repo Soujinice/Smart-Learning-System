@@ -1,8 +1,12 @@
 // Module G - Emergency System.
-// Central override state machine: IDLE -> VERIFY -> ACTIVE -> RESPONSE ->
-// CLEARED -> RESET -> IDLE. Triggered by a confirmed module D event, the
-// manual fire pull station, or a dashboard "test emergency drill". While
-// ACTIVE/RESPONSE, all smart doors (the physical main-entrance servo, plus
+// State machine: IDLE -> PENDING -> ACTIVE -> (CLEARED) -> IDLE.
+// A confirmed module D detection does NOT unlock doors or sound the alarm
+// by itself anymore - it raises PENDING and waits for a human. An admin
+// must explicitly Confirm (-> ACTIVE, full override) or Dismiss (-> IDLE,
+// logged as an admin-dismissed false alarm) from the dashboard. Manual
+// fire-pull-station presses and the dashboard "test drill" are inherently
+// human-initiated already, so they go straight to ACTIVE, skipping PENDING.
+// While ACTIVE, all smart doors (the physical main-entrance servo, plus
 // every virtual door the dashboard tracks) report UNLOCKED and RFID checks
 // are bypassed (see module_rfid.h isEmergencyOverrideActive).
 #pragma once
@@ -17,45 +21,65 @@
 
 class EmergencyModule {
 public:
-  enum State { IDLE, VERIFY, ACTIVE, RESPONSE, CLEARED };
+  enum State { IDLE, PENDING, ACTIVE, CLEARED };
 
   std::function<void(bool unlockAll)> setAllDoors;
 
   void begin() {}
 
-  bool isOverrideActive() const { return state == ACTIVE || state == RESPONSE; }
+  bool isOverrideActive() const { return state == ACTIVE; }
+  bool isPending() const { return state == PENDING; }
   State currentState() const { return state; }
 
   const char *stateName() const {
     switch (state) {
       case IDLE: return "IDLE";
-      case VERIFY: return "VERIFY";
+      case PENDING: return "PENDING";
       case ACTIVE: return "ACTIVE";
-      case RESPONSE: return "RESPONSE";
       case CLEARED: return "CLEARED";
     }
     return "IDLE";
   }
 
-  void triggerFromSecurity(const String &reason) { startAndConfirm(reason, false); }
-  void triggerManualPull() { startAndConfirm("Manual fire pull station activated", true); }
-  void triggerDrill() { startAndConfirm("Emergency drill (dashboard test)", true); }
+  // Sensor-confirmed (module D) - waits for an admin decision.
+  void triggerFromSecurity(const String &reason) {
+    if (state != IDLE) return; // one emergency at a time
+    activeReason = reason;
+    isDrill = false;
+    Proto::flow("G", "G_RECEIVED");
+    Proto::flow("G", "G_VERIFY");
+    Proto::flow("G", "G_CONFIRMED", "YES");
+    state = PENDING;
+    sendState("pending");
+  }
+
+  // Human-initiated - already confirmed by the act of pressing/clicking it.
+  void triggerManualPull() { startConfirmed("Manual fire pull station activated"); }
+  void triggerDrill() { startConfirmed("Emergency drill (dashboard test)"); }
 
   void loop() {
-    if (state == CLEARED) {
-      doReset();
-    }
+    if (state == CLEARED) doReset();
   }
 
-  void acknowledge() {
-    if (state != ACTIVE) return;
-    Proto::flow("G", "G_RESPONSE");
-    state = RESPONSE;
-    sendState("acknowledged");
+  // Admin: PENDING -> ACTIVE.
+  void confirm() {
+    if (state != PENDING) return;
+    activate();
   }
 
+  // Admin: PENDING -> IDLE (false alarm, no override ever engaged).
+  void dismiss() {
+    if (state != PENDING) return;
+    Proto::flow("G", "G_LOG_CANCEL");
+    Proto::flow("G", "G_NORMAL_STATUS");
+    sendState("dismissed");
+    state = IDLE;
+    activeReason = "";
+  }
+
+  // Admin: ACTIVE -> CLEARED, only if sensors are also back to normal.
   void requestClear(bool sensorsNormal) {
-    if (state != RESPONSE) return;
+    if (state != ACTIVE) return;
     Proto::flow("G", "G_CLEARED", sensorsNormal ? "YES" : "NO");
     if (!sensorsNormal) {
       Proto::flow("G", "G_CONTINUE");
@@ -66,8 +90,11 @@ public:
   }
 
   void handleCommand(const String &type, JsonObjectConst payload) {
-    if (type == "emergency_ack") {
-      acknowledge();
+    if (type == "emergency_confirm") {
+      confirm();
+      Proto::ack(type, true);
+    } else if (type == "emergency_dismiss") {
+      dismiss();
       Proto::ack(type, true);
     } else if (type == "emergency_clear") {
       requestClear(payload["sensors_normal"].as<bool>());
@@ -85,20 +112,12 @@ private:
   String activeReason;
   bool isDrill = false;
 
-  void startAndConfirm(const String &reason, bool preConfirmed) {
-    if (state != IDLE) return; // one active emergency at a time
+  void startConfirmed(const String &reason) {
+    if (state != IDLE) return; // one emergency at a time
+    activeReason = reason;
+    isDrill = reason.indexOf("drill") >= 0;
     Proto::flow("G", "G_RECEIVED");
     Proto::flow("G", "G_VERIFY");
-    state = VERIFY;
-    activeReason = reason;
-    isDrill = preConfirmed && reason.indexOf("drill") >= 0;
-
-    // Module D already performs the false-alarm rejection sequence before
-    // ever calling triggerFromSecurity(); the manual pull station and the
-    // dashboard drill are both inherently confirmed sources. So verification
-    // here always resolves to YES - this still emits the flowchart's
-    // "Verify Emergency Signal" / "Emergency Confirmed?" nodes for the
-    // Flow Tracker page.
     Proto::flow("G", "G_CONFIRMED", "YES");
     activate();
   }
@@ -131,7 +150,7 @@ private:
   void sendState(const String &phase) {
     JsonDocument doc = Proto::begin("alert");
     doc["module"] = "G";
-    doc["severity"] = (state == ACTIVE || state == RESPONSE) ? "critical" : "info";
+    doc["severity"] = (state == ACTIVE) ? "critical" : (state == PENDING ? "warning" : "info");
     doc["phase"] = phase;
     doc["state"] = stateName();
     doc["reason"] = activeReason;

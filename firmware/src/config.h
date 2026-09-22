@@ -7,8 +7,8 @@
 // ---------------------------------------------------------------------------
 // Pin map (see README.md "Wiring table" for the human-readable version)
 // ---------------------------------------------------------------------------
-#define PIN_OLED_SDA        21
-#define PIN_OLED_SCL        22
+#define PIN_LCD_SDA          21   // shared I2C bus (LCD + nothing else needs it)
+#define PIN_LCD_SCL          22
 
 #define PIN_DHT22            15
 #define PIN_PIR              13
@@ -21,10 +21,20 @@
 #define PIN_POT_METAL        33   // ADC1_CH5 - metal detector signal strength
 
 #define PIN_BTN_SCREEN       14
-#define PIN_BTN_CARD1        25   // registered student
-#define PIN_BTN_CARD2        26   // registered faculty
-#define PIN_BTN_CARD3        27   // unregistered / invalid card
 #define PIN_BTN_PULL_STATION  4   // manual fire pull station (active low)
+
+// MFRC522 RFID reader - real hardware simulation (Wokwi part "board-mfrc522").
+// Custom (non-default-VSPI) pins via SPI.begin(sck,miso,mosi,ss) so they
+// don't collide with the pins already used above. GPIO12 is a boot
+// strapping pin on real ESP32 hardware (sets flash voltage) - it is safe
+// here because nothing external pulls it during boot, but if you ever
+// port this wiring to real hardware with a different reset circuit,
+// move RST to a different free GPIO. See README wiring table.
+#define PIN_RFID_RST         12
+#define PIN_RFID_SS          27   // a.k.a. SDA on the RC522 breakout
+#define PIN_RFID_SCK         26
+#define PIN_RFID_MOSI        25
+#define PIN_RFID_MISO        35   // input-only pin - correct direction for MISO
 
 #define PIN_LED_GREEN        16
 #define PIN_LED_YELLOW       17

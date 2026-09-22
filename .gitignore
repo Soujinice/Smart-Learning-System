@@ -2,6 +2,9 @@ node_modules/
 server/.env
 server/data/*.json
 !server/data/seed.json
+server/__pycache__/
+server/.venv/
+*.pyc
 .pio/
 .vscode/.wokwi-cache/
 *.log
