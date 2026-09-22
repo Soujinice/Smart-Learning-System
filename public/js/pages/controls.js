@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state, on as onStoreChange } from '../store.js';
-import { el, card, toast, clearNode, toggleSwitch, sliderRow } from '../ui.js';
+import { el, card, toast, clearNode, toggleSwitch, sliderRow, withPreservedFocus } from '../ui.js';
 
 let container = null;
 let unsub = null;
@@ -19,6 +19,10 @@ const MODULE_LIST = [
 
 function render() {
   if (!container) return;
+  withPreservedFocus(container, renderBody);
+}
+
+function renderBody() {
   clearNode(container);
 
   container.appendChild(el('div', { class: 'page-header' }, [el('h1', {}, 'Controls')]));

@@ -74,6 +74,17 @@ smart-learning-center/
   inside that class's scheduled window - it only hands control back to the
   schedule once that window naturally ends, so it can't immediately
   re-enter session the instant you ended it.
+- **Typing doesn't get interrupted anymore.** Pages rebuild their DOM on
+  every store update (telemetry alone ticks about once a second), which
+  used to drop focus out of whatever field you were typing into - one
+  keystroke would land, the next second's re-render would knock focus onto
+  nothing, and the rest never landed (this could also mangle what got
+  submitted from the **Register New Card** panel, which is why a card
+  might still read denied even after "granting" it). Any page with form
+  fields (Attendance & RFID, Smart Room's sim-clock controls, Admin/
+  Faculty, Controls' sliders) now pauses its own rebuild while a field has
+  focus or a slider is being dragged, and catches up the moment you're
+  done - see `withPreservedFocus` in `public/js/ui.js`.
 - **CCTV is the presenter's own webcam**, shown via the browser's
   `getUserMedia()` API on the Security & Fire page - not a Wokwi part, since
   Wokwi has no camera peripheral. It starts **off**; use the **Turn On

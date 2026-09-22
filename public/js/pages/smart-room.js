@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { state, on as onStoreChange } from '../store.js';
-import { el, card, table, fmtTime, liveBadge, toast, clearNode } from '../ui.js';
+import { el, card, table, fmtTime, liveBadge, toast, clearNode, withPreservedFocus } from '../ui.js';
 
 let container = null;
 let unsub = null;
@@ -22,6 +22,10 @@ function minToHHMM(min) { const h = Math.floor(min / 60); const m = min % 60; re
 
 function render() {
   if (!container) return;
+  withPreservedFocus(container, renderBody);
+}
+
+function renderBody() {
   clearNode(container);
   const t = state.telemetry;
   const rm = t?.smart_room;

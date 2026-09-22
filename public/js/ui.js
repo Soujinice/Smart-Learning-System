@@ -15,6 +15,29 @@ export function el(tag, attrs = {}, children = []) {
   return node;
 }
 
+// Pages rebuild their entire DOM on every store update (telemetry alone
+// ticks about once a second). Tearing everything down while the user is
+// mid-keystroke (or mid-drag on a slider) drops focus onto nothing, so
+// whatever they're doing never lands - the page looks like it's fighting
+// them. Wrap a render() body with this: while a field inside the container
+// is focused, the rebuild is skipped entirely (that field, its value, its
+// cursor, and any in-progress drag stay exactly as they are) and deferred
+// until the field loses focus, at which point the page catches up.
+export function withPreservedFocus(container, rebuild) {
+  const active = document.activeElement;
+  if (active && container.contains(active) && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+    if (!active.dataset.deferredRerender) {
+      active.dataset.deferredRerender = '1';
+      active.addEventListener('blur', () => {
+        delete active.dataset.deferredRerender;
+        setTimeout(() => withPreservedFocus(container, rebuild), 0);
+      }, { once: true });
+    }
+    return;
+  }
+  rebuild();
+}
+
 export function liveBadge(isLive) {
   return el('span', { class: `badge ${isLive ? 'badge-live' : 'badge-sim'}` }, isLive ? 'LIVE' : 'SIMULATED');
 }
