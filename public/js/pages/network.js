@@ -17,31 +17,31 @@ function topologySvg() {
     const s = seg(name);
     return `
       <g transform="translate(${segX[i]},9)">
-        <rect x="-2.6" y="0" width="5.2" height="1.6" rx="0.15" fill="#fff" stroke="var(--gray-300)"></rect>
+        <rect x="-2.6" y="0" width="5.2" height="1.6" rx="0.15" fill="#fff" stroke="var(--text-faint)"></rect>
         <text x="0" y="0.65" font-size="0.28" text-anchor="middle" fill="#1F2937">${name}</text>
         <text x="0" y="1.2" font-size="0.24" text-anchor="middle" fill="#6B7280">Tx ${fmtBytes(s?.tx_bytes)} / Rx ${fmtBytes(s?.rx_bytes)}</text>
-        <line x1="0" y1="0" x2="0" y2="-2" stroke="var(--gray-300)"></line>
+        <line x1="0" y1="0" x2="0" y2="-2" stroke="var(--text-faint)"></line>
       </g>`;
   }).join('');
 
   return `<svg viewBox="0 0 24 12" width="100%" style="max-width:960px;">
     <g transform="translate(12,0.9)">
-      <rect x="-2" y="-0.7" width="4" height="1.4" rx="0.15" fill="var(--gray-900)"></rect>
+      <rect x="-2" y="-0.7" width="4" height="1.4" rx="0.15" fill="var(--surface-3)" stroke="var(--border-strong)" stroke-width="0.05"></rect>
       <text x="0" y="0.15" font-size="0.3" text-anchor="middle" fill="#fff">Internet</text>
     </g>
-    <line x1="12" y1="1.6" x2="12" y2="2.6" stroke="var(--gray-300)"></line>
+    <line x1="12" y1="1.6" x2="12" y2="2.6" stroke="var(--text-faint)"></line>
     <g transform="translate(12,3.3)">
       <rect x="-2.2" y="-0.7" width="4.4" height="1.4" rx="0.15" fill="var(--red-primary)"></rect>
       <text x="0" y="0.15" font-size="0.3" text-anchor="middle" fill="#fff">Firewall</text>
     </g>
-    <line x1="12" y1="4" x2="12" y2="5" stroke="var(--gray-300)"></line>
+    <line x1="12" y1="4" x2="12" y2="5" stroke="var(--text-faint)"></line>
     <g transform="translate(12,5.7)">
       <rect x="-2" y="-0.7" width="4" height="1.4" rx="0.15" fill="var(--blue)"></rect>
       <text x="0" y="0.15" font-size="0.3" text-anchor="middle" fill="#fff">Router</text>
     </g>
-    <line x1="12" y1="6.4" x2="12" y2="7.4" stroke="var(--gray-300)"></line>
+    <line x1="12" y1="6.4" x2="12" y2="7.4" stroke="var(--text-faint)"></line>
     <g transform="translate(12,8.1)">
-      <rect x="-2.6" y="-0.7" width="5.2" height="1.4" rx="0.15" fill="var(--gray-700)"></rect>
+      <rect x="-2.6" y="-0.7" width="5.2" height="1.4" rx="0.15" fill="var(--surface-3)" stroke="var(--border-strong)" stroke-width="0.05"></rect>
       <text x="0" y="0.15" font-size="0.3" text-anchor="middle" fill="#fff">Core Switch</text>
     </g>
     ${segNodes}

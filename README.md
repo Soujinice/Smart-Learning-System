@@ -64,7 +64,16 @@ smart-learning-center/
   correctly reporting an unrecognized card, not a bug. On the Attendance &
   RFID page, the **Register New Card** panel auto-fills the UID from that
   denied tap; give it a name and click **Register & Grant** to add it to the
-  registry and immediately show it as a granted attendance tap.
+  registry and immediately show it as a granted attendance tap. Registering
+  also clears the reader's duplicate-tap guard for that UID, so a real
+  re-tap right after registering is re-checked fresh instead of being
+  swallowed as a duplicate of the earlier denial.
+- **Ending a class sticks.** "Start Class Now" / "End Class Now" on the
+  Smart Room page take effect immediately, and once you manually end a
+  class it stays in STANDBY (relay off) even if the sim clock is still
+  inside that class's scheduled window - it only hands control back to the
+  schedule once that window naturally ends, so it can't immediately
+  re-enter session the instant you ended it.
 - **CCTV is the presenter's own webcam**, shown via the browser's
   `getUserMedia()` API on the Security & Fire page - not a Wokwi part, since
   Wokwi has no camera peripheral. It starts **off**; use the **Turn On

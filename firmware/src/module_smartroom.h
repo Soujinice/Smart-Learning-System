@@ -78,8 +78,12 @@ public:
     attendanceCount++;
   }
 
-  void requestStart() { manualStart = true; }
-  void requestEnd() { manualEnd = true; }
+  void requestStart() { manualStart = true; standbyOverride = false; }
+  // Ending manually should stick - without the override, the very next
+  // STANDBY tick's schedule check would immediately re-enter session if
+  // the sim clock is still inside the class's scheduled window, making
+  // "End Class Now" look like it did nothing.
+  void requestEnd() { manualEnd = true; standbyOverride = true; }
 
   // Physical DHT22/PIR sampling - called from main.cpp whenever the
   // *Environment* module is enabled, independent of whether the Smart Room
@@ -106,7 +110,8 @@ public:
         Proto::flow("B", "B_START");
         Proto::flow("B", "B_CHECK_SCHED");
         int idx = findActiveEntry();
-        bool scheduled = (idx >= 0) || manualStart;
+        if (idx < 0) standbyOverride = false; // schedule caught up; resume automatic control
+        bool scheduled = (idx >= 0 && !standbyOverride) || manualStart;
         Proto::flow("B", "B_SCHEDULED", scheduled ? "YES" : "NO");
         if (scheduled) {
           activeEntryIdx = idx;
@@ -205,6 +210,7 @@ private:
   int activeEntryIdx = -1;
 
   bool manualStart = false, manualEnd = false;
+  bool standbyOverride = false; // true while a manual End Class should hold over the schedule
   bool lastMotion = false, lastAbnormal = false;
   float lastTempC = 24.0f, lastHumPct = 55.0f;
   float tempMin = Defaults::TEMP_MIN_C, tempMax = Defaults::TEMP_MAX_C;

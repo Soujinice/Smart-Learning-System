@@ -76,6 +76,12 @@ public:
               o["room"].as<String>());
     }
     Proto::log("RFID: registry synced (" + String(userCount) + " users)");
+    // A card that just got registered may be the exact UID an earlier
+    // denied tap set as "last seen" - without clearing this, re-tapping it
+    // right after registering would be swallowed as a duplicate of that
+    // earlier denial instead of being re-checked against the new registry.
+    lastUid = "";
+    lastTapMs = 0;
   }
 
   void loop() {

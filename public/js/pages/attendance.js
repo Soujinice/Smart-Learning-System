@@ -125,9 +125,20 @@ function buildRegisterPanel() {
         await api.saveRfid(updated);
         registry = updated;
         await api.tap(uid); // re-tap immediately so it shows granted right away
-        toast(`${name} registered - tap granted`, 'success');
+        toast(`${name} registered`, 'success');
         regUid = ''; regName = ''; regRoom = ''; lastAutoFilledUid = null;
         render();
+        // Confirm the re-tap actually landed as granted (not swallowed as a
+        // duplicate of the original denied tap) once the resulting event
+        // has had time to come back over the wire.
+        setTimeout(() => {
+          const result = state.rfidTaps.find((t) => t.uid === uid)?.result;
+          if (result && result.startsWith('granted')) {
+            toast(`${name} - tap granted, RFID is working`, 'success');
+          } else if (result === 'duplicate') {
+            toast(`${name} is registered - tap the card again to confirm it grants`, 'success');
+          }
+        }, 1200);
       } catch (e) { toast(e.message, 'error'); }
     },
   }, 'Register & Grant');

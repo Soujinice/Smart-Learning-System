@@ -79,9 +79,9 @@ export function toast(msg, kind = 'info') {
     box = el('div', { id: 'toast-box', style: 'position:fixed;bottom:16px;right:16px;z-index:50;display:flex;flex-direction:column;gap:8px;' });
     document.body.appendChild(box);
   }
-  const colors = { info: 'var(--gray-900)', error: 'var(--red-primary)', success: 'var(--green)' };
+  const colors = { info: 'var(--surface-3)', error: 'var(--red-primary)', success: 'var(--green)' };
   const item = el('div', {
-    style: `background:${colors[kind] || colors.info};color:#fff;padding:10px 14px;border-radius:6px;font-size:12.5px;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,0.2);`,
+    style: `background:${colors[kind] || colors.info};color:#fff;padding:10px 14px;border-radius:6px;font-size:12.5px;max-width:320px;border:1px solid var(--border-strong);box-shadow:0 4px 16px rgba(0,0,0,0.5);`,
   }, msg);
   box.appendChild(item);
   setTimeout(() => item.remove(), 4000);
