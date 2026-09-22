@@ -63,7 +63,7 @@ receives an `ack` with `cmd` echoing the type.
 | `sync_users` | `{users:[{uid,name,role,room,section}]}` | Replaces the RFID registry (module A) |
 | `sync_schedule` | `{entries:[{room,start,end,subject,section,faculty}]}` | Replaces the SF-03 schedule (module B); `start`/`end` are minutes since 00:00 |
 | `set_thresholds` | any of the threshold fields (env/room temp+hum, smoke L1-L4, metal, waste/bin) | Updates the relevant module(s); unrecognized keys are ignored |
-| `rfid_tap` | `{uid}` | Injects a virtual tap (source `"web"`), same as a physical card on the reader |
+| `rfid_tap` | `{uid}` | Injects a virtual tap (source `"web"`), same as a physical card on the reader. The dashboard's own Virtual Tap/Register & Grant buttons no longer send this - `/api/rfid/tap` now decides grant/deny itself against the server's registry and never depends on the firmware being reachable or in sync (see the honesty notes in README.md). The command still exists on the wire for anything that wants to inject a tap the firmware itself evaluates. |
 | `class_override` | `{action:"start"\|"end"}` | Demo override for module B |
 | `screening_decision` | `{allow:boolean}` | Resolves a module F screening hold |
 | `waste_collect` | `{admin_override:boolean}` | Resets the physical bin (module H) |

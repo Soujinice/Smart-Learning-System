@@ -89,11 +89,15 @@ function buildTapPanel() {
     class: 'pill-btn primary',
     onclick: async () => {
       if (!select.value) { toast('Choose a user to tap first', 'error'); return; }
-      try { await api.tap(select.value); toast('Virtual tap sent to ESP32', 'success'); } catch (e) { toast(e.message, 'error'); }
+      try {
+        const { result } = await api.tap(select.value);
+        toast(result === 'granted' ? 'Tap granted' : `Tap ${result}`, result === 'granted' ? 'success' : 'error');
+      } catch (e) { toast(e.message, 'error'); }
     },
   }, 'Simulate Web Tap');
 
   return card('Virtual Tap', [
+    el('div', { style: 'color:var(--text-muted);font-size:12.5px;margin-bottom:8px;' }, 'Records attendance directly on the dashboard - works even if Wokwi isn\'t connected or hasn\'t synced yet.'),
     el('div', { class: 'form-inline' }, [select, btn]),
   ]);
 }
@@ -128,21 +132,13 @@ function buildRegisterPanel() {
       try {
         await api.saveRfid(updated);
         registry = updated;
-        await api.tap(uid); // re-tap immediately so it shows granted right away
-        toast(`${name} registered`, 'success');
+        // The server decides this against its own registry (the one we
+        // just saved), independent of whether the firmware's in-memory
+        // copy has caught up yet - so this result is authoritative.
+        const { result } = await api.tap(uid);
+        toast(result === 'granted' ? `${name} registered - tap granted` : `${name} registered, but the re-tap came back "${result}" - try Simulate Web Tap`, result === 'granted' ? 'success' : 'error');
         regUid = ''; regName = ''; regRoom = ''; lastAutoFilledUid = null;
         render();
-        // Confirm the re-tap actually landed as granted (not swallowed as a
-        // duplicate of the original denied tap) once the resulting event
-        // has had time to come back over the wire.
-        setTimeout(() => {
-          const result = state.rfidTaps.find((t) => t.uid === uid)?.result;
-          if (result && result.startsWith('granted')) {
-            toast(`${name} - tap granted, RFID is working`, 'success');
-          } else if (result === 'duplicate') {
-            toast(`${name} is registered - tap the card again to confirm it grants`, 'success');
-          }
-        }, 1200);
       } catch (e) { toast(e.message, 'error'); }
     },
   }, 'Register & Grant');

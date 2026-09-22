@@ -374,8 +374,40 @@ async def api_rfid_tap(request: Request):
     uid = body.get("uid")
     if not uid:
         return JSONResponse({"ok": False, "error": "uid required"}, status_code=400)
-    await send_command("rfid_tap", {"uid": uid})
-    return {"ok": True}
+
+    # Decided here, against the server's own (always-current) registry,
+    # instead of only forwarding to the firmware and waiting for it to
+    # report back. A "virtual tap" exists specifically so the dashboard/
+    # attendance flow can be tested even when the ESP32's in-memory copy
+    # of the registry isn't in sync yet - it has no persistent storage, so
+    # every reset forgets everything sync_users hasn't re-sent since, and
+    # that resync depends on a working serial link. This endpoint no
+    # longer depends on any of that for its own result.
+    registry = db.get("rfid_registry")
+    user = next((u for u in registry if u.get("uid") == uid), None)
+    ts = (last_telemetry or {}).get("sim_time") or now_iso()
+
+    if user:
+        event = {
+            "t": "rfid", "uid": uid, "source": "web", "result": "granted",
+            "name": user.get("name", ""), "role": user.get("role", ""), "room": user.get("room", ""),
+            "ts": ts,
+        }
+        db.push("attendance", {
+            "t": "attendance", "uid": uid, "name": user.get("name", ""), "role": user.get("role", ""),
+            "room": user.get("room") or "Main Entrance", "ts": ts, "source": "web",
+            "id": str(uuid.uuid4()),
+        })
+    else:
+        event = {"t": "rfid", "uid": uid, "source": "web", "result": "denied", "name": "", "role": "", "room": "", "ts": ts}
+    await broadcast(event)
+
+    # Deliberately not forwarded to the firmware: if it happened to also be
+    # in sync, its own echoed rfid/attendance messages would double up the
+    # tap feed and attendance table for the same tap. A virtual tap is a
+    # dashboard-only simulation - it doesn't pulse the physical door servo,
+    # same as it never has.
+    return {"ok": True, "result": event["result"]}
 
 
 @app.get("/api/attendance")

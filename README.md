@@ -102,6 +102,15 @@ smart-learning-center/
   Diagnostics page's raw console, so if something "isn't fixed," checking
   that version against what's on the branch is the fastest way to tell a
   real regression from an unrebuilt binary.
+- **Virtual Tap and Register & Grant no longer depend on Wokwi at all.**
+  Both now decide grant/deny directly against the server's own registry
+  and record attendance themselves, instead of forwarding to the firmware
+  and waiting for it to report back - so they work immediately and
+  reliably even if Wokwi isn't running, hasn't connected yet, or its
+  in-memory registry hasn't (or can't) sync. This is the recommended way
+  to demo the attendance flow; tapping a real/virtual card **on the
+  MFRC522 reader itself** still exercises the full firmware path and
+  depends on it being in sync (see the notes above).
 - **Ending a class sticks.** "Start Class Now" / "End Class Now" on the
   Smart Room page take effect immediately, and once you manually end a
   class it stays in STANDBY (relay off) even if the sim clock is still
